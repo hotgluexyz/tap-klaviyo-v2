@@ -39,7 +39,7 @@ class EventsStream(KlaviyoStream):
     name = "events"
     path = "/events"
     primary_keys = ["id"]
-    replication_key = "updated"
+    replication_key = "datetime"
 
 
 class ListMembersStream(KlaviyoStream):

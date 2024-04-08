@@ -26,8 +26,8 @@ class KlaviyoStream(RESTStream):
     @property
     def authenticator(self):
         # auth with hapikey
-        if self.config.get("api_private_key"):
-            api_key = f'Klaviyo-API-Key {self.config.get("api_private_key")}'
+        if self.config.get("api_key"):
+            api_key = f'Klaviyo-API-Key {self.config.get("api_key")}'
             return APIKeyAuthenticator.create_for_stream(
                 self, key="Authorization", value=api_key, location="header"
             )
@@ -79,9 +79,8 @@ class KlaviyoStream(RESTStream):
 
     def post_process(self, row, context):
         row = super().post_process(row, context)
-        rep_key = self.replication_key
-        if row.get("attributes") and self.replication_key:
-            row[rep_key] = row["attributes"][rep_key]
+        for key, value in row.get("attributes", {}).items():
+            row[key] = value
         return row
 
     def is_unix_timestamp(self, date):
@@ -160,30 +159,36 @@ class KlaviyoStream(RESTStream):
             properties = []
             property_names = set()
 
-            # Loop through all records – some objects have different keys
-            for record in records:
-                # Loop through each key in the object
-                for name in record.keys():
-                    if name in property_names:
-                        continue
-                    # Add the new property to our list
-                    property_names.add(name)
-                    if self.is_unix_timestamp(record[name]):
-                        properties.append(th.Property(name, th.DateTimeType))
-                    else:
-                        properties.append(
-                            th.Property(name, self.get_jsonschema_type(record[name]))
-                        )
-                # if the rep_key is not at a header level add updated as default
-                if (
-                    self.replication_key is not None
-                    and self.replication_key not in record.keys()
-                ):
+            record = records[0]
+            # put attributes fields at header level
+            attributes = record.pop("attributes", {})
+            if attributes:
+                record.update(attributes)
+
+            # Loop through each key in the object
+            for name in record.keys():
+                if name in property_names:
+                    continue
+                # Add the new property to our list
+                property_names.add(name)
+                if name in  ["event_properties", "properties"]:
                     properties.append(
-                        th.Property(self.replication_key, th.DateTimeType)
+                        th.Property(name, th.CustomType({"type": ["object", "string"]}))
+                    ) 
+                elif self.is_unix_timestamp(record[name]):
+                    properties.append(th.Property(name, th.DateTimeType))
+                else:
+                    properties.append(
+                        th.Property(name, self.get_jsonschema_type(record[name]))
                     )
-                # we need to process only first record
-                break
+            # if the rep_key is not at a header level add updated as default
+            if (
+                self.replication_key is not None
+                and self.replication_key not in record.keys()
+            ):
+                properties.append(
+                    th.Property(self.replication_key, th.DateTimeType)
+                )
             # Return the list as a JSON Schema dictionary object
             property_list = th.PropertiesList(*properties).to_dict()
 
