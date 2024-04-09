@@ -52,7 +52,7 @@ class TapKlaviyo(Tap):
             th.StringType,
         ),
         th.Property(
-            "api_private_key",
+            "api_key",
             th.StringType,
         ),
     ).to_dict()
