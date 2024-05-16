@@ -13,6 +13,7 @@ from singer_sdk.helpers.jsonpath import extract_jsonpath
 from singer_sdk.streams import RESTStream
 
 from tap_klaviyo.auth import KlaviyoAuthenticator
+from urllib.parse import urlparse, parse_qs
 
 
 class KlaviyoStream(RESTStream):
@@ -54,9 +55,16 @@ class KlaviyoStream(RESTStream):
             )
             token_link = next(iter(all_matches), None)
             if token_link:
-                match = re.search(r"page%5Bcursor%5D=(.*)", token_link)
-                if match:
-                    return match.group(1)
+                parsed_url = urlparse(token_link)
+                # Extract the query parameters
+                query_params = parse_qs(parsed_url.query)
+                cursor = query_params.get('page[cursor]')
+                if cursor:
+                    if len(cursor)>0:
+                        next_page_token = cursor[0]
+                if next_page_token:
+                    return next_page_token
+        return None        
 
     def get_starting_time(self, context):
         start_date = self.config.get("start_date")
