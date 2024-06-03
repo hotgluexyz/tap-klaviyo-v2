@@ -30,12 +30,13 @@ class KlaviyoStream(RESTStream):
 
     @property
     def authenticator(self):
+        api_key = self.config.get("api_private_key") or self.config.get("api_key")
         # auth with access token
         if self.config.get("refresh_token"):
             return KlaviyoAuthenticator.create_for_stream(self)
         # auth with api key
-        elif self.config.get("api_private_key"):
-            api_key = f'Klaviyo-API-Key {self.config.get("api_private_key")}'
+        elif api_key:
+            api_key = f"Klaviyo-API-Key {api_key}"
             return APIKeyAuthenticator.create_for_stream(
                 self, key="Authorization", value=api_key, location="header"
             )
