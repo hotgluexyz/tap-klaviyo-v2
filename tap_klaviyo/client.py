@@ -2,18 +2,22 @@
 
 import re
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Callable
 
 import requests
 from backports.cached_property import cached_property
 from pendulum import parse
 from singer_sdk import typing as th
 from singer_sdk.authenticators import APIKeyAuthenticator
+from singer_sdk.exceptions import FatalAPIError, RetriableAPIError
 from singer_sdk.helpers.jsonpath import extract_jsonpath
 from singer_sdk.streams import RESTStream
 
 from tap_klaviyo.auth import KlaviyoAuthenticator
 from urllib.parse import urlparse, parse_qs
+from urllib3.exceptions import ProtocolError, InvalidChunkLength
+from requests.exceptions import  ReadTimeout, ChunkedEncodingError
+import backoff
 
 
 class KlaviyoStream(RESTStream):
@@ -211,3 +215,22 @@ class KlaviyoStream(RESTStream):
     @cached_property
     def schema(self) -> dict:
         return self.get_schema()
+    
+    def request_decorator(self, func: Callable) -> Callable:
+        """Instantiate a decorator for handling request failures."""
+        decorator: Callable = backoff.on_exception(
+            backoff.expo,
+            (
+                RetriableAPIError,
+                ReadTimeout,
+                ConnectionError,
+                ConnectionResetError,
+                ProtocolError,
+                InvalidChunkLength,
+                requests.RequestException,
+                ChunkedEncodingError,
+            ),
+            max_tries=8,
+            factor=5,
+        )(func)
+        return decorator
