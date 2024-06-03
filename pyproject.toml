@@ -37,3 +37,4 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.scripts]
 # CLI declaration
 tap-klaviyo-v2 = 'tap_klaviyo.tap:TapKlaviyo.cli'
+tap-klaviyo = 'tap_klaviyo.tap:TapKlaviyo.cli'
