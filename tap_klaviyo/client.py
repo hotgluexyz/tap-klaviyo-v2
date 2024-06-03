@@ -39,6 +39,8 @@ class KlaviyoStream(RESTStream):
             return APIKeyAuthenticator.create_for_stream(
                 self, key="Authorization", value=api_key, location="header"
             )
+        else:
+            raise FatalAPIError("No valid authentication method found")    
 
     @property
     def http_headers(self) -> dict:
