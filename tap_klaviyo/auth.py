@@ -82,8 +82,7 @@ class KlaviyoAuthenticator(OAuthAuthenticator, metaclass=SingletonMeta):
             token_response.raise_for_status()
             self.logger.info("OAuth authorization attempt was successful.")
         except Exception as ex:
-            self.state.update({"auth_error_response": token_response.text})
-            raise RuntimeError(
+            raise Exception(
                 f"Failed OAuth login, response was '{token_response.text()}'. {ex}"
             )
         token_json = token_response.json()
