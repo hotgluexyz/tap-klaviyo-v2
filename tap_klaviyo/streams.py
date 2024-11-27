@@ -50,3 +50,11 @@ class ListMembersStream(KlaviyoStream):
     primary_keys = ["id"]
     replication_key = "joined_group_at"
     parent_stream_type = ListsStream
+
+class ReviewsStream(KlaviyoStream):
+    """Define custom stream."""
+
+    name = "reviews"
+    path = "/reviews"
+    primary_keys = ["id"]
+    replication_key = "updated"

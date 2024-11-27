@@ -11,6 +11,7 @@ from tap_klaviyo.streams import (
     ListMembersStream,
     ListsStream,
     MetricsStream,
+    ReviewsStream,
 )
 
 STREAM_TYPES = [
@@ -19,6 +20,7 @@ STREAM_TYPES = [
     MetricsStream,
     EventsStream,
     ListMembersStream,
+    ReviewsStream,
 ]
 
 
