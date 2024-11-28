@@ -18,6 +18,9 @@ from urllib.parse import urlparse, parse_qs
 from urllib3.exceptions import ProtocolError, InvalidChunkLength
 from requests.exceptions import  ReadTimeout, ChunkedEncodingError
 import backoff
+import os
+import json
+import logging
 
 
 class KlaviyoStream(RESTStream):
@@ -47,7 +50,7 @@ class KlaviyoStream(RESTStream):
     def http_headers(self) -> dict:
         """Return the http headers needed."""
         headers = {}
-        headers["revision"] = "2024-02-15"
+        headers["revision"] = "2024-10-15"
         if "user_agent" in self.config:
             headers["User-Agent"] = self.config.get("user_agent")
         return headers
@@ -139,6 +142,34 @@ class KlaviyoStream(RESTStream):
         else:
             return th.CustomType({"type": ["string", "number", "object"]})
 
+    def get_abs_path(self, path):
+        return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
+
+    def load_schema(self, name):
+        return json.load(open(self.get_abs_path('schemas/{}.json'.format(name))))
+
+    def _fill_missing_properties(self, property_list):
+        try:
+            default_schema = self.load_schema(self.name)
+        except:
+            logging.warning(f"The stream '{self.name}' does not have a default schema.")
+            return property_list
+        
+        new_properties = default_schema.get('properties', {})
+
+        def recursive_copy(source, target):
+            for key, value in source.items():
+                if isinstance(value, dict):
+                    target[key] = target.get(key, {})
+                    recursive_copy(value, target[key])
+                else:
+                    target[key] = value
+
+        recursive_copy(property_list.get('properties', {}), new_properties)
+        
+        property_list['properties'] = new_properties
+        return property_list
+
     def get_schema(self) -> dict:
         """Dynamically detect the json schema for the stream.
         This is evaluated prior to any records being retrieved.
@@ -212,13 +243,13 @@ class KlaviyoStream(RESTStream):
                 )
             # Return the list as a JSON Schema dictionary object
             property_list = th.PropertiesList(*properties).to_dict()
-
-            return property_list
         else:
-            return th.PropertiesList(
+            property_list = th.PropertiesList(
                 th.Property("id", th.StringType),
                 th.Property(self.replication_key, th.DateTimeType),
             ).to_dict()
+        property_list = self._fill_missing_properties(property_list)
+        return property_list
 
     @cached_property
     def schema(self) -> dict:

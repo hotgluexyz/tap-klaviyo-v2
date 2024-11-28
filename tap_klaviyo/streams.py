@@ -1,5 +1,6 @@
 """Stream type classes for tap-klaviyo."""
 
+from typing import Any, Dict, Optional
 from tap_klaviyo.client import KlaviyoStream
 
 
@@ -57,4 +58,17 @@ class ReviewsStream(KlaviyoStream):
     name = "reviews"
     path = "/reviews"
     primary_keys = ["id"]
-    replication_key = "updated"
+    replication_key = "created"
+
+    def get_url_params(
+            self, context: Optional[dict], next_page_token: Optional[Any]
+        ) -> Dict[str, Any]:
+            """Return a dictionary of values to be used in URL parameterization."""
+            params: dict = {}
+            if next_page_token:
+                params["page[cursor]"] = next_page_token
+            start_date = self.get_starting_time(context)
+            if self.replication_key and start_date:
+                start_date = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+                params["filter"] = f"greater-or-equal({self.replication_key},{start_date})"
+            return params
