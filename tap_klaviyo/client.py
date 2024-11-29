@@ -93,50 +93,13 @@ class KlaviyoStream(RESTStream):
             params["filter"] = f"greater-than({self.replication_key},{start_date})"
         return params
 
-    def _reinforce_jsonschema_type(self, obj, sub_schema):
-        if "null" in sub_schema["type"] and obj is None:
-            return None
-        if "integer" in sub_schema["type"]:
-            try:
-                return int(obj)
-            except:
-                pass
-        if "number" in sub_schema["type"]:
-            try:
-                return float(obj)
-            except:
-                pass
-        if "boolean" in sub_schema["type"]:
-            try:
-                return bool(obj)
-            except:
-                pass
-        if "string" in sub_schema["type"]:
-            if self.is_unix_timestamp(obj):
-                return obj
-            try:
-                return str(obj)
-            except:
-                pass
-        if type(obj) == list:
-            if len(obj) > 0:
-                return [self._reinforce_jsonschema_type(item, sub_schema["items"]) for item in obj]
-            else:
-                return []
-        if type(obj) == dict:
-            reinforced_obj = {}
-            for key in obj.keys():
-                reinforced_obj[key] = self._reinforce_jsonschema_type(obj[key], sub_schema["properties"][key])
-            return reinforced_obj
-        else:
-            raise Exception(f"Unsupported type: {type(obj)}")
+    
 
     def post_process(self, row, context):
         row = super().post_process(row, context)
         for key, value in row.get("attributes", {}).items():
             row[key] = value
         row.pop("attributes", None)
-        row = self._reinforce_jsonschema_type(row, self.schema)
         return row
 
     def is_unix_timestamp(self, date):
