@@ -97,15 +97,27 @@ class KlaviyoStream(RESTStream):
         if "null" in sub_schema["type"] and obj is None:
             return None
         if "integer" in sub_schema["type"]:
-            return int(obj)
+            try:
+                return int(obj)
+            except:
+                pass
         if "number" in sub_schema["type"]:
-            return float(obj)
+            try:
+                return float(obj)
+            except:
+                pass
+        if "boolean" in sub_schema["type"]:
+            try:
+                return bool(obj)
+            except:
+                pass
         if "string" in sub_schema["type"]:
             if self.is_unix_timestamp(obj):
                 return obj
-            return str(obj)
-        if "boolean" in sub_schema["type"]:
-            return bool(obj)
+            try:
+                return str(obj)
+            except:
+                pass
         if type(obj) == list:
             if len(obj) > 0:
                 return [self._reinforce_jsonschema_type(item, sub_schema["items"]) for item in obj]
@@ -152,17 +164,17 @@ class KlaviyoStream(RESTStream):
                 return th.ArrayType(self.get_jsonschema_type(obj[0]))
             else:
                 return th.ArrayType(
-                    th.CustomType({"type": ["string"]})
+                    th.CustomType({"type": ["string", "number", "object"]})
                 )
         if dtype == dict:
             obj_props = []
             for key in obj.keys():
                 obj_props.append(th.Property(key, self.get_jsonschema_type(obj[key])))
             if not obj_props:
-                return th.CustomType({"type": ["string"]})
+                return th.CustomType({"type": ["string", "number", "object"]})
             return th.ObjectType(*obj_props)
         else:
-            return th.CustomType({"type": ["string"]})
+            return th.CustomType({"type": ["string", "number", "object"]})
 
     def get_schema(self) -> dict:
         """Dynamically detect the json schema for the stream.
