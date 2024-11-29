@@ -124,15 +124,17 @@ class KlaviyoStream(RESTStream):
                 return th.ArrayType(self.get_jsonschema_type(obj[0]))
             else:
                 return th.ArrayType(
-                    th.CustomType({"type": ["number", "string", "object"]})
+                    th.CustomType({"type": ["string"]})
                 )
         if dtype == dict:
             obj_props = []
             for key in obj.keys():
                 obj_props.append(th.Property(key, self.get_jsonschema_type(obj[key])))
+            if not obj_props:
+                return th.CustomType({"type": ["string"]})
             return th.ObjectType(*obj_props)
         else:
-            return th.CustomType({"type": ["number", "string", "object"]})
+            return th.CustomType({"type": ["string"]})
 
     def get_schema(self) -> dict:
         """Dynamically detect the json schema for the stream.
