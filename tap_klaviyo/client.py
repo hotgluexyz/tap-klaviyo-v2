@@ -93,10 +93,13 @@ class KlaviyoStream(RESTStream):
             params["filter"] = f"greater-than({self.replication_key},{start_date})"
         return params
 
+    
+
     def post_process(self, row, context):
         row = super().post_process(row, context)
         for key, value in row.get("attributes", {}).items():
             row[key] = value
+        row.pop("attributes", None)
         return row
 
     def is_unix_timestamp(self, date):
@@ -124,17 +127,17 @@ class KlaviyoStream(RESTStream):
                 return th.ArrayType(self.get_jsonschema_type(obj[0]))
             else:
                 return th.ArrayType(
-                    th.CustomType({"type": ["string"]})
+                    th.CustomType({"type": ["string", "number", "object"]})
                 )
         if dtype == dict:
             obj_props = []
             for key in obj.keys():
                 obj_props.append(th.Property(key, self.get_jsonschema_type(obj[key])))
             if not obj_props:
-                return th.CustomType({"type": ["string"]})
+                return th.CustomType({"type": ["string", "number", "object"]})
             return th.ObjectType(*obj_props)
         else:
-            return th.CustomType({"type": ["string"]})
+            return th.CustomType({"type": ["string", "number", "object"]})
 
     def get_schema(self) -> dict:
         """Dynamically detect the json schema for the stream.
