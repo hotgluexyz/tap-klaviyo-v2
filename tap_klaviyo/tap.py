@@ -11,6 +11,7 @@ from tap_klaviyo.streams import (
     ListMembersStream,
     ListsStream,
     MetricsStream,
+    ReviewsStream,
 )
 
 STREAM_TYPES = [
@@ -19,6 +20,7 @@ STREAM_TYPES = [
     MetricsStream,
     EventsStream,
     ListMembersStream,
+    ReviewsStream,
 ]
 
 
@@ -59,7 +61,14 @@ class TapKlaviyo(Tap):
 
     def discover_streams(self) -> List[Stream]:
         """Return a list of discovered streams."""
-        return [stream_class(tap=self) for stream_class in STREAM_TYPES]
+        discovered_streams = []
+        for stream_class in STREAM_TYPES:
+            try:
+                stream = stream_class(tap=self)
+                discovered_streams.append(stream)
+            except Exception as e:
+                self.logger.error(f"Error discovering stream {stream_class}: {e}")
+        return discovered_streams
 
 
 if __name__ == "__main__":
