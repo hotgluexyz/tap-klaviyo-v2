@@ -146,7 +146,9 @@ class KlaviyoStream(RESTStream):
         return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
 
     def load_schema(self, name):
-        return json.load(open(self.get_abs_path('schemas/{}.json'.format(name))))
+        schema_path = self.get_abs_path(f'schemas/{name}.json')
+        with open(schema_path, 'r') as schema_file:
+            return json.load(schema_file)
 
     def _fill_missing_properties(self, property_list):
         try:
@@ -233,22 +235,15 @@ class KlaviyoStream(RESTStream):
                     properties.append(
                         th.Property(name, self.get_jsonschema_type(record[name]))
                     )
-            # if the rep_key is not at a header level add updated as default
-            if (
-                self.replication_key is not None
-                and self.replication_key not in record.keys()
-            ):
-                properties.append(
-                    th.Property(self.replication_key, th.DateTimeType)
-                )
             # Return the list as a JSON Schema dictionary object
             property_list = th.PropertiesList(*properties).to_dict()
         else:
             property_list = th.PropertiesList(
                 th.Property("id", th.StringType),
-                th.Property(self.replication_key, th.DateTimeType),
             ).to_dict()
         property_list = self._fill_missing_properties(property_list)
+        if self.replication_key is not None:
+            property_list["properties"].update(th.Property(self.replication_key,th.DateTimeType).to_dict())
         return property_list
 
     @cached_property
