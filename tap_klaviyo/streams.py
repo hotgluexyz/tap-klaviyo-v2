@@ -42,6 +42,16 @@ class EventsStream(KlaviyoStream):
     primary_keys = ["id"]
     replication_key = "datetime"
 
+    def get_url_params(
+            self, context: Optional[dict], next_page_token: Optional[Any]
+        ) -> Dict[str, Any]:
+        """Return a dictionary of values to be used in URL parameterization."""
+        params = super().get_url_params(context, next_page_token)
+        # add filter to get only events for a metric
+        if self.name != "events":
+            params["filter"] = f"equals(metric_id,'{self.metric_id}')"
+        return params
+    
 
 class ListMembersStream(KlaviyoStream):
     """Define custom stream."""
@@ -51,6 +61,7 @@ class ListMembersStream(KlaviyoStream):
     primary_keys = ["id"]
     replication_key = "joined_group_at"
     parent_stream_type = ListsStream
+
 
 class ReviewsStream(KlaviyoStream):
     """Define custom stream."""
