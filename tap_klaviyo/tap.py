@@ -68,6 +68,31 @@ class TapKlaviyo(Tap):
                 discovered_streams.append(stream)
             except Exception as e:
                 self.logger.error(f"Error discovering stream {stream_class}: {e}")
+        
+        # fetch all metrics
+        try:
+            metrics_stream = MetricsStream(tap=self)
+            metrics_response = metrics_stream.request_records({})
+            metrics = [record for record in metrics_response]
+        except Exception as e:
+            self.logger.error(f"Error fetching metrics: {e}")
+            metrics = []
+
+        # create event stream per metric
+        for metric in metrics:
+            metric_name = metric["attributes"]["name"]
+            metric_id = metric["id"]
+            stream_name = f"events_{metric_name}".lower().replace(" ", "_")
+            event_stream = type(
+                metric_name,
+                (EventsStream,),
+                {
+                    "name": stream_name,
+                    "metric_id": metric_id,
+                },
+            )(tap=self)
+            discovered_streams.append(event_stream)
+
         return discovered_streams
 
 
