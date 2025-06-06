@@ -2,6 +2,7 @@
 
 from typing import Any, Dict, Optional
 from tap_klaviyo.client import KlaviyoStream
+from singer_sdk import typing as th
 
 
 class ContactsStream(KlaviyoStream):
@@ -51,6 +52,45 @@ class EventsStream(KlaviyoStream):
         if self.name != "events":
             params["filter"] = f"equals(metric_id,'{self.metric_id}')"
         return params
+    
+    def get_schema(self):
+        schema = super().get_schema()
+        # if schema only has pk and replication key, use default schema
+        if len(schema["properties"]) == 2:
+            schema = th.PropertiesList(
+                th.Property("type", th.StringType),
+                th.Property("id", th.StringType),
+                th.Property("relationships", th.ObjectType(
+                    th.Property("profile", th.ObjectType(
+                        th.Property("data", th.ObjectType(
+                            th.Property("type", th.StringType),
+                            th.Property("id", th.StringType),
+                        )),
+                        th.Property("links", th.ObjectType(
+                            th.Property("self", th.StringType),
+                            th.Property("related", th.StringType),
+                        )),
+                    )),
+                    th.Property("metric", th.ObjectType(
+                        th.Property("data", th.ObjectType(
+                            th.Property("type", th.StringType),
+                            th.Property("id", th.StringType),
+                        )),
+                        th.Property("links", th.ObjectType(
+                            th.Property("self", th.StringType),
+                            th.Property("related", th.StringType),
+                        )),
+                    )),
+                )),
+                th.Property("links", th.ObjectType(
+                    th.Property("self", th.StringType),
+                )),
+                th.Property("timestamp", th.IntegerType),
+                th.Property("event_properties", th.CustomType({"type": ["object", "string"]})),
+                th.Property("datetime", th.DateTimeType),
+                th.Property("uuid", th.StringType),
+            ).to_dict()
+        return schema
     
 
 class ListMembersStream(KlaviyoStream):
