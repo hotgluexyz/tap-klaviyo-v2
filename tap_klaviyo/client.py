@@ -96,13 +96,14 @@ class KlaviyoStream(RESTStream):
             params["filter"] = f"greater-than({self.replication_key},{start_date})"
         return params
 
-    
-
     def post_process(self, row, context):
         row = super().post_process(row, context)
         for key, value in row.get("attributes", {}).items():
             row[key] = value
         row.pop("attributes", None)
+        for key, value in row.items():
+            if self.schema.get("properties", {}).get(key, {}).get("format") == "date-time" and value is not None:
+                row[key] = parse(value).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         return row
 
     def is_unix_timestamp(self, date):
