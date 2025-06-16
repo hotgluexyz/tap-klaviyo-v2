@@ -93,7 +93,14 @@ class KlaviyoStream(RESTStream):
         start_date = self.get_starting_time(context)
         if self.replication_key and start_date:
             start_date = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-            params["filter"] = f"greater-than({self.replication_key},{start_date})"
+            if self.config.get("end_date"):
+                end_date = self.config.get("end_date")
+                end_date = parse(self.config.get("end_date"))
+                end_date = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+                params["filter"] = f"and(greater-than({self.replication_key},{start_date}),less-or-equal({self.replication_key},{end_date}))"
+            else:
+                params["filter"] = f"greater-than({self.replication_key},{start_date})"
+
         return params
 
     def post_process(self, row, context):
