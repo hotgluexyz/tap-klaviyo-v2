@@ -69,29 +69,32 @@ class TapKlaviyo(Tap):
             except Exception as e:
                 self.logger.error(f"Error discovering stream {stream_class}: {e}")
         
-        # fetch all metrics
-        try:
-            metrics_stream = MetricsStream(tap=self)
-            metrics_response = metrics_stream.request_records({})
-            metrics = [record for record in metrics_response]
-        except Exception as e:
-            self.logger.error(f"Error fetching metrics: {e}")
-            metrics = []
+        # fetch all metrics (unless they are missing from the existing catalog)
+        is_sync = self.input_catalog is not None
+        should_query_metrics = next((t for t in iter(self.input_catalog.keys()) if "events_" in t), None) if is_sync else True
+        if should_query_metrics:
+            try:
+                metrics_stream = MetricsStream(tap=self)
+                metrics_response = metrics_stream.request_records({})
+                metrics = [record for record in metrics_response]
+            except Exception as e:
+                self.logger.error(f"Error fetching metrics: {e}")
+                metrics = []
 
-        # create event stream per metric
-        for metric in metrics:
-            metric_name = metric["attributes"]["name"]
-            metric_id = metric["id"]
-            stream_name = f"events_{metric_name}".lower().replace(" ", "_")
-            event_stream = type(
-                metric_name,
-                (EventsStream,),
-                {
-                    "name": stream_name,
-                    "metric_id": metric_id,
-                },
-            )(tap=self)
-            discovered_streams.append(event_stream)
+            # create event stream per metric
+            for metric in metrics:
+                metric_name = metric["attributes"]["name"]
+                metric_id = metric["id"]
+                stream_name = f"events_{metric_name}".lower().replace(" ", "_")
+                event_stream = type(
+                    metric_name,
+                    (EventsStream,),
+                    {
+                        "name": stream_name,
+                        "metric_id": metric_id,
+                    },
+                )(tap=self)
+                discovered_streams.append(event_stream)
 
         return discovered_streams
 
