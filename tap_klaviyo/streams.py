@@ -56,7 +56,7 @@ class EventsStream(KlaviyoStream):
     def get_schema(self):
         schema = super().get_schema()
         # if schema only has pk and replication key, use default schema
-        if len(schema["properties"]) == 2:
+        if schema.get("properties") and len(schema["properties"]) == 2:
             schema = th.PropertiesList(
                 th.Property("type", th.StringType),
                 th.Property("id", th.StringType),
