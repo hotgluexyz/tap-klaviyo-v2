@@ -184,6 +184,10 @@ class KlaviyoStream(RESTStream):
         """Dynamically detect the json schema for the stream.
         This is evaluated prior to any records being retrieved.
         """
+        # If we didn't find the stream during discover, avoid the failed request
+        if self._tap.input_catalog and not self._tap.input_catalog.get(self.name):
+            return {}
+        
         self._requests_session = requests.Session()
         # Get the data
         headers = self.http_headers
