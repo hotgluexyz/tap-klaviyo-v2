@@ -186,7 +186,9 @@ class KlaviyoStream(RESTStream):
         """
         # If we didn't find the stream during discover, avoid the failed request
         if self._tap.input_catalog and not self._tap.input_catalog.get(self.name):
-            return {}
+            return {
+                "properties": {}
+            }
         
         self._requests_session = requests.Session()
         # Get the data
