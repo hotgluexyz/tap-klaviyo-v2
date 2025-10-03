@@ -59,7 +59,7 @@ class TapKlaviyo(Tap):
             th.StringType,
         ),
         th.Property(
-            "reports",
+            "custom_reports",
             th.ArrayType(
                 th.ObjectType(
                     th.Property("name", th.StringType, required=True),
