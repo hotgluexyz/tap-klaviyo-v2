@@ -1,9 +1,16 @@
 """Stream type classes for tap-klaviyo."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 from tap_klaviyo.client import KlaviyoStream
 from singer_sdk import typing as th
+from datetime import datetime, timedelta, timezone
+from pendulum import parse
 
+def _as_utc(dt: datetime) -> datetime:
+    """Return a timezone-aware UTC datetime."""
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
 
 class ContactsStream(KlaviyoStream):
     """Define custom stream."""
@@ -123,3 +130,165 @@ class ReviewsStream(KlaviyoStream):
                 start_date = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
                 params["filter"] = f"greater-or-equal({self.replication_key},{start_date})"
             return params
+
+class ReportStream(KlaviyoStream):
+    """Report stream for metric aggregates using Klaviyo's Query Metric Aggregates API."""
+    page_size = 500
+
+    def __init__(self, tap, report_config: Dict[str, Any]):
+        """Initialize report stream with configuration."""
+        self.report_config = report_config
+        self.name = report_config["name"]
+        self.metric_id = report_config["metric_id"]
+
+        # Handle dimensions as comma-separated string
+        dimensions = report_config.get("dimensions", "Campaign Name,$message")
+        self.dimensions = [d.strip() for d in dimensions.split(",")]
+
+        # Handle metrics as comma-separated string
+        metrics = report_config.get("metrics", "count")
+        self.metrics = [m.strip() for m in metrics.split(",")]
+
+        self.interval = report_config.get("interval", "day")
+        self.path = "/metric-aggregates"
+
+        # Call parent constructor
+        super().__init__(tap=tap)
+        
+    @property
+    def rest_method(self) -> str:
+        """Return the REST method for this stream."""
+        return "POST"
+
+    def get_url_params(
+        self, context: Optional[dict], next_page_token: Optional[Any]
+    ) -> Dict[str, Any]:
+        """Return empty params since we use POST body."""
+        return {}
+
+    def prepare_request_payload(
+        self, context: Optional[dict], next_page_token: Optional[Any]
+    ) -> Optional[dict]:
+        """Prepare the request payload for the metric aggregates API."""
+        # Resolve end_date first (config takes precedence), then normalize to UTC
+        end_date = _as_utc(parse(self.config["end_date"])) if self.config.get("end_date") else datetime.now(timezone.utc)
+
+        # Start date: use bookmark if present; otherwise default to a recent window (7 days)
+        start_date = self.get_starting_time(context)
+        if start_date is None:
+            start_date = end_date - timedelta(days=7)
+        start_date = _as_utc(start_date)
+
+        # Guard: if start > end (bad bookmark), fall back to last 7 days ending at end_date
+        if start_date >= end_date:
+            self.logger.warning(
+                f"Start date ({start_date.isoformat()}) is not before end date ({end_date.isoformat()}); "
+                "falling back to last 7 days."
+            )
+            start_date = end_date - timedelta(days=7)
+
+        # Klaviyo API: maximum time range is 1 year
+        one_year_ago = end_date - timedelta(days=365)
+        if start_date < one_year_ago:
+            self.logger.warning(f"Limited date range to 1 year for report stream {self.name}")
+            start_date = one_year_ago
+
+        # Format as ISO8601 without microseconds, with 'Z'
+        start_date_str = start_date.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+        end_date_str = end_date.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+        # Build filters (Klaviyo expects filter expressions)
+        filters = [
+            f"greater-or-equal(datetime,{start_date_str})",
+            f"less-than(datetime,{end_date_str})",
+        ]
+
+        payload = {
+            "data": {
+                "type": "metric-aggregate",
+                "attributes": {
+                    "metric_id": self.metric_id,
+                    "measurements": self.metrics,
+                    "interval": self.interval,
+                    "timezone": "UTC",
+                    "filter": filters,
+                    "page_size": self.page_size,
+                    "by": self.dimensions,
+                },
+            }
+        }
+
+        return payload
+
+    def get_schema(self) -> dict:
+        """Return the schema for this report stream."""
+        properties = [
+            th.Property("date", th.DateTimeType, required=True),
+            th.Property("metric_id", th.StringType, required=True),
+        ]
+        
+        # Add dimension properties
+        for dimension in self.dimensions:
+            properties.append(th.Property(dimension, th.StringType))
+        
+        # Add metric properties
+        for metric in self.metrics:
+            properties.append(th.Property(metric, th.NumberType))
+        
+        # Add additional properties that might be returned
+        properties.extend([
+            th.Property("datetime", th.DateTimeType),
+            th.Property("timezone", th.StringType),
+        ])
+        
+        return th.PropertiesList(*properties).to_dict()
+
+    def parse_response(self, response) -> List[Dict[str, Any]]:
+        """Parse the response from the metric aggregates API."""
+        try:
+            data = response.json()
+            results = []
+            
+            # Extract data from the response
+            if "data" in data and "attributes" in data["data"]:
+                attributes = data["data"]["attributes"]
+                dates = attributes.get("dates", [])
+                data_points = attributes.get("data", [])
+                
+                # Process each data point
+                for item in data_points:
+                    # Get dimensions array
+                    dimensions = item.get("dimensions", [])
+                    measurements = item.get("measurements", {})
+                    
+                    # Create a record for each date
+                    for date_str in dates:
+                        formatted_date = parse(date_str).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+                        record = {
+                            "date": formatted_date,
+                            "metric_id": self.metric_id,
+                        }
+                        
+                        # Add dimension values
+                        for i, dimension in enumerate(self.dimensions):
+                            if i < len(dimensions):
+                                record[dimension] = dimensions[i]
+                            else:
+                                record[dimension] = None
+                        
+                        # Add metric values
+                        for metric in self.metrics:
+                            metric_values = measurements.get(metric, [])
+                            if metric_values and len(metric_values) > 0:
+                                # Take the first value (assuming single date)
+                                record[metric] = metric_values[0]
+                            else:
+                                record[metric] = 0
+                        
+                        results.append(record)
+            
+            return results
+            
+        except Exception as e:
+            self.logger.error(f"Error parsing response: {e}")
+            return []

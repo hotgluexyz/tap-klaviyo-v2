@@ -10,6 +10,7 @@ This tap:
 - Outputs the schema for each resource
 - Incrementally pulls data based on the input state for incremental endpoints
 - Updates full tables for global exclusions and lists endpoints
+- **NEW**: Provides report-style streams with aggregated metrics using Klaviyo's [Query Metric Aggregates API](https://developers.klaviyo.com/en/reference/query_metric_aggregates)
 
 ## Quick start
 
@@ -61,5 +62,80 @@ This tap:
    ```bash
    tap-klaviyo --config config.json [--state state.json] [--catalog catalog.json]
    ```
+
+## Report Streams
+
+The tap now includes report-style streams that provide aggregated metrics using Klaviyo's Query Metric Aggregates API. These streams offer pre-built reports for common analytics needs while allowing customization through configuration.
+
+### Default Report Streams
+
+The tap automatically includes the following default report streams:
+
+- **emails_sent_per_day**: Daily count of emails sent, grouped by campaign name and message
+- **emails_opened_per_day**: Daily unique count of email opens, grouped by campaign name and message  
+- **emails_clicked_per_day**: Daily unique count of email clicks, grouped by campaign name and message
+- **flows_triggered_per_day**: Daily count of flow triggers, grouped by flow name and channel
+- **campaign_performance_daily**: Daily email performance metrics (opens and counts), grouped by campaign name and channel
+
+### Custom Report Configuration
+
+You can define custom report streams by adding a `custom_reports` array to your configuration file:
+
+```json
+{
+  "api_key": "pk_XYZ",
+  "start_date": "2017-01-01T00:00:00Z",
+  "custom_reports": [
+    {
+      "name": "campaign_opens_per_day",
+      "metric_id": "SZ95bT",
+      "dimensions": "Campaign Name,$message",
+      "metrics": "unique",
+      "interval": "day"
+    },
+    {
+      "name": "flow_performance_weekly",
+      "metric_id": "WEC6yf", 
+      "dimensions": "Campaign Name,$message",
+      "metrics": "count,unique",
+      "interval": "week"
+    }
+  ]
+}
+```
+
+### Report Configuration Options
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Unique name for the report stream |
+| `metric_id` | string | Yes | Klaviyo metric ID (e.g., "SZ95bT", "WEC6yf") |
+| `dimensions` | string | No | Comma-separated attributes to group data by (e.g., "Campaign Name,$message") |
+| `metrics` | string | No | Comma-separated aggregation types: "count", "unique", "sum_value" (default: "count") |
+| `interval` | string | No | Time interval: "day", "week", "month" (default: "day") |
+
+### Supported Dimensions
+
+Common dimensions you can use for grouping include:
+
+- **Campaign dimensions**: "Campaign Name", "Campaign Channel"
+- **Flow dimensions**: "Flow Name", "Flow Channel" 
+- **Message dimensions**: "$message", "$subject"
+- **Profile dimensions**: "$email", "$phone_number"
+- **Date dimensions**: "datetime" (automatically handled by interval)
+
+### Supported Metrics
+
+The following aggregation types are supported:
+
+- **count**: Total number of events
+- **unique**: Number of unique profiles
+- **sum_value**: Sum of numeric values
+
+### Example Use Cases
+
+1. **Email Campaign Performance**: Track daily opens, clicks, and sends by campaign
+2. **Flow Analytics**: Monitor flow performance across different channels
+3. **Customer Engagement**: Analyze profile engagement patterns over time
 
 ---
