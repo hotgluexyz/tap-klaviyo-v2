@@ -291,4 +291,4 @@ class ReportStream(KlaviyoStream):
             
         except Exception as e:
             self.logger.error(f"Error parsing response: {e}")
-            return []
+            raise e
