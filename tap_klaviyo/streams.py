@@ -245,50 +245,45 @@ class ReportStream(KlaviyoStream):
 
     def parse_response(self, response) -> List[Dict[str, Any]]:
         """Parse the response from the metric aggregates API."""
-        try:
-            data = response.json()
-            results = []
+        data = response.json()
+        results = []
+        
+        # Extract data from the response
+        if "data" in data and "attributes" in data["data"]:
+            attributes = data["data"]["attributes"]
+            dates = attributes.get("dates", [])
+            data_points = attributes.get("data", [])
             
-            # Extract data from the response
-            if "data" in data and "attributes" in data["data"]:
-                attributes = data["data"]["attributes"]
-                dates = attributes.get("dates", [])
-                data_points = attributes.get("data", [])
+            # Process each data point
+            for item in data_points:
+                # Get dimensions array
+                dimensions = item.get("dimensions", [])
+                measurements = item.get("measurements", {})
                 
-                # Process each data point
-                for item in data_points:
-                    # Get dimensions array
-                    dimensions = item.get("dimensions", [])
-                    measurements = item.get("measurements", {})
+                # Create a record for each date
+                for date_str in dates:
+                    formatted_date = parse(date_str).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+                    record = {
+                        "date": formatted_date,
+                        "metric_id": self.metric_id,
+                    }
                     
-                    # Create a record for each date
-                    for date_str in dates:
-                        formatted_date = parse(date_str).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-                        record = {
-                            "date": formatted_date,
-                            "metric_id": self.metric_id,
-                        }
-                        
-                        # Add dimension values
-                        for i, dimension in enumerate(self.dimensions):
-                            if i < len(dimensions):
-                                record[dimension] = dimensions[i]
-                            else:
-                                record[dimension] = None
-                        
-                        # Add metric values
-                        for metric in self.metrics:
-                            metric_values = measurements.get(metric, [])
-                            if metric_values and len(metric_values) > 0:
-                                # Take the first value (assuming single date)
-                                record[metric] = metric_values[0]
-                            else:
-                                record[metric] = 0
-                        
-                        results.append(record)
-            
-            return results
-            
-        except Exception as e:
-            self.logger.error(f"Error parsing response: {e}")
-            raise e
+                    # Add dimension values
+                    for i, dimension in enumerate(self.dimensions):
+                        if i < len(dimensions):
+                            record[dimension] = dimensions[i]
+                        else:
+                            record[dimension] = None
+                    
+                    # Add metric values
+                    for metric in self.metrics:
+                        metric_values = measurements.get(metric, [])
+                        if metric_values and len(metric_values) > 0:
+                            # Take the first value (assuming single date)
+                            record[metric] = metric_values[0]
+                        else:
+                            record[metric] = 0
+                    
+                    results.append(record)
+        
+        return results
