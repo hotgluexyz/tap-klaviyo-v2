@@ -147,16 +147,14 @@ class TapKlaviyo(Tap):
                 "metric_id": "SZ95bT",  # Opened Email
                 "dimensions": "Campaign Name,$message",
                 "metrics": "count",
-                "interval": "day",
-                "timezone": "UTC"
+                "interval": "day"
             },
             {
                 "name": "emails_clicked_per_day",
                 "metric_id": "WEC6yf",  # Clicked Email
                 "dimensions": "Campaign Name,$message",
                 "metrics": "count",
-                "interval": "day",
-                "timezone": "UTC"
+                "interval": "day"
             },
             {
                 "name": "emails_bounced_per_day",
