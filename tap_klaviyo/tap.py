@@ -111,23 +111,8 @@ class TapKlaviyo(Tap):
                 )(tap=self)
                 discovered_streams.append(event_stream)
 
-        # Add default report streams if not in the config
-        default_reports = self._get_default_reports()
-        custom_reports = self.config.get("custom_reports", [])
-
-        for report_config in default_reports:
-            if report_config["name"] in [cr["name"] for cr in custom_reports]:
-                continue
-
-            try:
-                report_stream = ReportStream(tap=self, report_config=report_config)
-                report_stream.replication_key = "date"
-                report_stream.primary_keys = ["date", "metric_id"] + report_stream.dimensions
-                discovered_streams.append(report_stream)
-            except Exception as e:
-                self.logger.error(f"Error creating default report stream {report_config['name']}: {e}")
-
         # Add custom reports streams from config
+        custom_reports = self.config.get("custom_reports", [])
         for report_config in custom_reports:
             try:
                 report_stream = ReportStream(tap=self, report_config=report_config)
@@ -138,46 +123,6 @@ class TapKlaviyo(Tap):
                 self.logger.error(f"Error creating custom report stream {report_config['name']}: {e}")
 
         return discovered_streams
-
-    def _get_default_reports(self):
-        """Return default report configurations."""
-        return [
-            {
-                "name": "emails_opened_per_day", 
-                "metric_id": "SZ95bT",  # Opened Email
-                "dimensions": "Campaign Name,$message",
-                "metrics": "count",
-                "interval": "day"
-            },
-            {
-                "name": "emails_clicked_per_day",
-                "metric_id": "WEC6yf",  # Clicked Email
-                "dimensions": "Campaign Name,$message",
-                "metrics": "count",
-                "interval": "day"
-            },
-            {
-                "name": "emails_bounced_per_day",
-                "metric_id": "XKhb4J",  # Bounced Email
-                "dimensions": "Campaign Name,$message",
-                "metrics": "count",
-                "interval": "day"
-            },
-            {
-                "name": "emails_received_per_day",
-                "metric_id": "Sn82zg",  # Received Email
-                "dimensions": "Campaign Name,$message",
-                "metrics": "count",
-                "interval": "day"
-            },
-            {
-                "name": "campaign_performance_daily",
-                "metric_id": "SZ95bT",  # Opened Email
-                "dimensions": "Campaign Name,$message",
-                "metrics": "count",
-                "interval": "day"
-            }
-        ]
 
 if __name__ == "__main__":
     TapKlaviyo.cli()
