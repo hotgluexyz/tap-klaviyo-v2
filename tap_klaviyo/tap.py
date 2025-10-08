@@ -12,6 +12,7 @@ from tap_klaviyo.streams import (
     ListsStream,
     MetricsStream,
     ReviewsStream,
+    ReportStream,
 )
 
 STREAM_TYPES = [
@@ -57,6 +58,20 @@ class TapKlaviyo(Tap):
             "api_key",
             th.StringType,
         ),
+        th.Property(
+            "custom_reports",
+            th.ArrayType(
+                th.ObjectType(
+                    th.Property("name", th.StringType, required=True),
+                    th.Property("metric_id", th.StringType, required=True),
+                    th.Property("dimensions", th.StringType, required=False),
+                    th.Property("metrics", th.StringType, required=False),
+                    th.Property("interval", th.StringType, required=False),
+                )
+            ),
+            required=False,
+            description="Custom report configurations for metric aggregates"
+        ),
     ).to_dict()
 
     def discover_streams(self) -> List[Stream]:
@@ -96,8 +111,18 @@ class TapKlaviyo(Tap):
                 )(tap=self)
                 discovered_streams.append(event_stream)
 
-        return discovered_streams
+        # Add custom reports streams from config
+        custom_reports = self.config.get("custom_reports", [])
+        for report_config in custom_reports:
+            try:
+                report_stream = ReportStream(tap=self, report_config=report_config)
+                report_stream.replication_key = "date"
+                report_stream.primary_keys = ["date", "metric_id"] + report_stream.dimensions
+                discovered_streams.append(report_stream)
+            except Exception as e:
+                self.logger.error(f"Error creating custom report stream {report_config['name']}: {e}")
 
+        return discovered_streams
 
 if __name__ == "__main__":
     TapKlaviyo.cli()
