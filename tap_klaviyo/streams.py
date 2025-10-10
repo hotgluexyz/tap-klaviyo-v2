@@ -146,8 +146,8 @@ class ReportStream(KlaviyoStream):
         self.dimensions = [d.strip() for d in dimensions.split(",")]
 
         # Handle metrics as comma-separated string
-        metrics = report_config.get("metrics", "count")
-        self.metrics = [m.strip() for m in metrics.split(",")]
+        aggregation_types = report_config.get("aggregation_types", "count")
+        self.aggregation_types = [m.strip() for m in aggregation_types.split(",")]
 
         self.interval = report_config.get("interval", "day")
         self.path = "/metric-aggregates"
@@ -208,7 +208,7 @@ class ReportStream(KlaviyoStream):
                 "type": "metric-aggregate",
                 "attributes": {
                     "metric_id": self.metric_id,
-                    "measurements": self.metrics,
+                    "measurements": self.aggregation_types,
                     "interval": self.interval,
                     "timezone": "UTC",
                     "filter": filters,
@@ -232,14 +232,9 @@ class ReportStream(KlaviyoStream):
             properties.append(th.Property(dimension, th.StringType))
         
         # Add metric properties
-        for metric in self.metrics:
-            properties.append(th.Property(metric, th.NumberType))
-        
-        # Add additional properties that might be returned
-        properties.extend([
-            th.Property("datetime", th.DateTimeType),
-            th.Property("timezone", th.StringType),
-        ])
+        for agg_type in self.aggregation_types:
+            properties.append(th.Property(agg_type, th.NumberType))
+
         
         return th.PropertiesList(*properties).to_dict()
 
@@ -276,13 +271,13 @@ class ReportStream(KlaviyoStream):
                             record[dimension] = None
                     
                     # Add metric values
-                    for metric in self.metrics:
-                        metric_values = measurements.get(metric, [])
+                    for agg_type in self.aggregation_types:
+                        metric_values = measurements.get(agg_type, [])
                         if metric_values and len(metric_values) > 0:
                             # Take the first value (assuming single date)
-                            record[metric] = metric_values[0]
+                            record[agg_type] = metric_values[0]
                         else:
-                            record[metric] = 0
+                            record[agg_type] = 0
                     
                     results.append(record)
         

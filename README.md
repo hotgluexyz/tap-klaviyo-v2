@@ -90,14 +90,14 @@ You can define custom report streams by adding a `custom_reports` array to your 
       "name": "campaign_opens_per_day",
       "metric_id": "SZ95bT",
       "dimensions": "Campaign Name,$message",
-      "metrics": "unique",
+      "aggregation_types": "unique",
       "interval": "day"
     },
     {
       "name": "flow_performance_weekly",
       "metric_id": "WEC6yf", 
       "dimensions": "Campaign Name,$message",
-      "metrics": "count,unique",
+      "measurements": "count,unique",
       "interval": "week"
     }
   ]
@@ -110,8 +110,9 @@ You can define custom report streams by adding a `custom_reports` array to your 
 |-------|------|----------|-------------|
 | `name` | string | Yes | Unique name for the report stream |
 | `metric_id` | string | Yes | Klaviyo metric ID (e.g., "SZ95bT", "WEC6yf") |
+| `metric_name` | string | No | Klaviyo Metric name|
 | `dimensions` | string | No | Comma-separated attributes to group data by (e.g., "Campaign Name,$message") |
-| `metrics` | string | No | Comma-separated aggregation types: "count", "unique", "sum_value" (default: "count") |
+| `aggregation_types` | string | No | Comma-separated aggregation types: "count", "unique", "sum_value" (default: "count") |
 | `interval` | string | No | Time interval: "day", "week", "month" (default: "day") |
 
 ### Supported Dimensions
@@ -124,7 +125,7 @@ Common dimensions you can use for grouping include:
 - **Profile dimensions**: "$email", "$phone_number"
 - **Date dimensions**: "datetime" (automatically handled by interval)
 
-### Supported Metrics
+### Supported aggregation types
 
 The following aggregation types are supported:
 
