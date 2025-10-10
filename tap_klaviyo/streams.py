@@ -234,12 +234,7 @@ class ReportStream(KlaviyoStream):
         # Add metric properties
         for agg_type in self.aggregation_types:
             properties.append(th.Property(agg_type, th.NumberType))
-        
-        # Add additional properties that might be returned
-        properties.extend([
-            th.Property("datetime", th.DateTimeType),
-            th.Property("timezone", th.StringType),
-        ])
+
         
         return th.PropertiesList(*properties).to_dict()
 
