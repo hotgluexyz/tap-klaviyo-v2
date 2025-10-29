@@ -63,7 +63,8 @@ class TapKlaviyo(Tap):
             th.ArrayType(
                 th.ObjectType(
                     th.Property("name", th.StringType, required=True),
-                    th.Property("metric_id", th.StringType, required=True),
+                    th.Property("metric_id", th.StringType, required=False),
+                    th.Property("metric_name", th.StringType, required=False),
                     th.Property("dimensions", th.StringType, required=False),
                     th.Property("metrics", th.StringType, required=False),
                     th.Property("interval", th.StringType, required=False),
@@ -75,7 +76,14 @@ class TapKlaviyo(Tap):
     ).to_dict()
 
     def metric_name_to_id(self, metrics, metric_name):
-        metric_id = next((metric["id"] for metric in metrics if metric["attributes"]["name"] == metric_name), None)
+        metric_id = next(
+            (
+                metric["id"] 
+                for metric in metrics 
+                if metric["attributes"]["name"].lower().replace(" ", "") == metric_name.lower().replace(" ", "")
+            ), None)
+        if not metric_id:
+            raise ValueError(f"Metric name {metric_name} not found")
         return metric_id
 
 
@@ -141,6 +149,9 @@ class TapKlaviyo(Tap):
                     if not metric_id:
                         raise ValueError(f"Metric name {report_config['metric_name']} not found")
                     report_config["metric_id"] = metric_id
+
+                if report_config["metric_id"] not in [m["id"] for m in metrics]:
+                    raise ValueError(f"Metric {report_config['metric_id']} not found in Klaviyo instance")
 
                 report_stream = ReportStream(tap=self, report_config=report_config)
                 report_stream.replication_key = "date"
