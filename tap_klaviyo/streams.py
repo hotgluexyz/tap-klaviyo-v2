@@ -256,7 +256,7 @@ class ReportStream(KlaviyoStream):
                 measurements = item.get("measurements", {})
                 
                 # Create a record for each date
-                for date_str in dates:
+                for index, date_str  in enumerate(dates):
                     formatted_date = parse(date_str).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
                     record = {
                         "date": formatted_date,
@@ -273,11 +273,10 @@ class ReportStream(KlaviyoStream):
                     # Add metric values
                     for agg_type in self.aggregation_types:
                         metric_values = measurements.get(agg_type, [])
-                        if metric_values and len(metric_values) > 0:
-                            # Take the first value (assuming single date)
-                            record[agg_type] = metric_values[0]
+                        if metric_values and len(metric_values) > index:
+                            record[agg_type] = metric_values[index]
                         else:
-                            record[agg_type] = 0
+                            record[agg_type] = None
                     
                     results.append(record)
         
