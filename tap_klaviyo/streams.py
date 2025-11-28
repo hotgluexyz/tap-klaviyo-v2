@@ -154,6 +154,7 @@ class ReportStream(KlaviyoStream):
 
         # Call parent constructor
         super().__init__(tap=tap)
+        self.end_date = _as_utc(parse(self.config["end_date"])) if self.config.get("end_date") else datetime.now(timezone.utc)
         
     @property
     def rest_method(self) -> str:
@@ -171,7 +172,7 @@ class ReportStream(KlaviyoStream):
     ) -> Optional[dict]:
         """Prepare the request payload for the metric aggregates API."""
         # Resolve end_date first (config takes precedence), then normalize to UTC
-        end_date = _as_utc(parse(self.config["end_date"])) if self.config.get("end_date") else datetime.now(timezone.utc)
+        end_date = self.end_date
 
         # Start date: use bookmark if present; otherwise default to a recent window (7 days)
         start_date = self.get_starting_time(context)
@@ -203,10 +204,7 @@ class ReportStream(KlaviyoStream):
             f"less-than(datetime,{end_date_str})",
         ]
 
-        payload = {
-            "data": {
-                "type": "metric-aggregate",
-                "attributes": {
+        attributes = {
                     "metric_id": self.metric_id,
                     "measurements": self.aggregation_types,
                     "interval": self.interval,
@@ -214,7 +212,15 @@ class ReportStream(KlaviyoStream):
                     "filter": filters,
                     "page_size": self.page_size,
                     "by": self.dimensions,
-                },
+                }
+        if next_page_token:
+            attributes["page_cursor"] = next_page_token
+            
+
+        payload = {
+            "data": {
+                "type": "metric-aggregate",
+                "attributes": attributes,
             }
         }
 
