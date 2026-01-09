@@ -202,26 +202,12 @@ class KlaviyoStream(RESTStream):
         # discover for child streams
         if self.parent_stream_type:
             parent_url = self.url_base + self.parent_stream_type.path
-            id = requests.request(
-                request_type,
-                parent_url,
-                headers=headers,
-            ).json()["data"]
+            id = self.request_decorator(self.get_data)(request_type, parent_url, headers)
             if id:
                 id = id[0]["id"]
             url = url.replace("{id}", id)
 
-        records = requests.request(
-            request_type,
-            url,
-            headers=headers,
-        )
-        if records.status_code == 200:
-            records = records.json().get("data", [])
-        else:
-            raise Exception(
-                f"There was an error when fetching data for schemas {records.text}"
-            )
+        records = self.request_decorator(self.get_data)(request_type, url, headers)
 
         if len(records) > 0:
             properties = []
@@ -259,6 +245,19 @@ class KlaviyoStream(RESTStream):
         if self.replication_key is not None:
             property_list["properties"].update(th.Property(self.replication_key,th.DateTimeType).to_dict())
         return property_list
+
+    def get_data(self, method: str, url: str, headers: dict) -> list:
+        response = requests.request(
+            method=method,
+            url=url,
+            headers=headers,
+        )
+        if response.status_code == 200:
+            return response.json()["data"]
+        else:
+            raise Exception(
+                f"There was an error when fetching data for schemas {response.text}"
+            )
 
     @cached_property
     def schema(self) -> dict:
