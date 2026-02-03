@@ -15,10 +15,15 @@ def _as_utc(dt: datetime) -> datetime:
 class ContactsStream(KlaviyoStream):
     """Define custom stream."""
 
+    def __init__(self, tap):
+        """Initialize contacts stream with configuration."""
+        super().__init__(tap=tap)
+        self.logger.info(f"Only sync new contacts: {self.config.get('only_sync_new_contacts')}")
+        self.replication_key = "created" if self.config.get("only_sync_new_contacts") == True else "updated"
+
     name = "contacts"
     path = "/profiles"
     primary_keys = ["id"]
-    replication_key = "updated"
 
 
 class ListsStream(KlaviyoStream):
