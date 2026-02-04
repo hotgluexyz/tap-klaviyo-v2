@@ -1,0 +1,13 @@
+{
+  "data": {
+    "attributes": {
+      "dates": ["2024-01-01T00:00:00+00:00"],
+      "data": [
+        {
+          "dimensions": ["value1"],
+          "measurements": {"count": [10]}
+        }
+      ]
+    }
+  }
+}

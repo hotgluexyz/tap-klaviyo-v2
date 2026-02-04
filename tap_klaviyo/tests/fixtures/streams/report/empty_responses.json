@@ -1,0 +1,14 @@
+{
+  "empty_data": {
+    "data": {
+      "attributes": {
+        "dates": [],
+        "data": []
+      }
+    }
+  },
+  "missing_attributes": {
+    "data": {}
+  },
+  "missing_data_key": {}
+}
