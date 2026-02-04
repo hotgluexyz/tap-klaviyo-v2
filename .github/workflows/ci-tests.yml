@@ -1,10 +1,9 @@
 name: CI Tests
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:  # Allows manual triggering from GitHub UI
   pull_request:
-    branches: [main]
+    types: [opened, synchronize, reopened]
 
 jobs:
   test:
