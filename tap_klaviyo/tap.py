@@ -38,7 +38,8 @@ class TapKlaviyo(Tap):
         parse_env_config=False,
         validate_config=True,
     ) -> None:
-        self.config_file = config[0]
+        # config may be a dict (tests/programmatic) or a list with path when from file
+        self.config_file = config[0] if isinstance(config, list) and config else None
         super().__init__(config, catalog, state, parse_env_config, validate_config)
 
     config_jsonschema = th.PropertiesList(

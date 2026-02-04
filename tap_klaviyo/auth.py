@@ -94,5 +94,6 @@ class KlaviyoAuthenticator(OAuthAuthenticator, metaclass=SingletonMeta):
         now = round(datetime.utcnow().timestamp())
         self._tap._config["expires_in"] = now + token_json["expires_in"]
 
-        with open(self._tap.config_file, "w") as outfile:
-            json.dump(self._tap._config, outfile, indent=4)
+        if self._tap.config_file:
+            with open(self._tap.config_file, "w") as outfile:
+                json.dump(self._tap._config, outfile, indent=4)

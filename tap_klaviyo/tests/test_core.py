@@ -3,7 +3,7 @@
 import datetime
 
 from singer_sdk.testing import get_standard_tap_tests
-from tap_klaviyo_v2.tap import TapKlaviyo
+from tap_klaviyo.tap import TapKlaviyo
 
 SAMPLE_CONFIG = {
     "start_date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
