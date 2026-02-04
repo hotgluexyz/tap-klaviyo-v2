@@ -1,0 +1,15 @@
+{
+  "data": {
+    "attributes": {
+      "dates": ["2024-01-01T00:00:00+00:00"],
+      "data": [
+        {
+          "dimensions": ["Campaign A", "msg_001"],
+          "measurements": {
+            "count": [100]
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "data": {
+    "attributes": {
+      "dates": ["2024-01-01T00:00:00+00:00", "2024-01-02T00:00:00+00:00"],
+      "data": [
+        {
+          "dimensions": ["Welcome Campaign", "msg_abc123"],
+          "measurements": {
+            "count": [100, 150]
+          }
+        }
+      ]
+    }
+  }
+}
