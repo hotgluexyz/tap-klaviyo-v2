@@ -22,16 +22,6 @@ def sample_config():
 
 
 @pytest.fixture
-def mock_tap(sample_config):
-    """Fixture for mocked tap instance."""
-    tap = MagicMock()
-    tap.config = sample_config
-    tap._config = sample_config
-    tap.logger = MagicMock()
-    return tap
-
-
-@pytest.fixture
 def mock_response():
     """Factory fixture for creating mock HTTP responses."""
     def _mock_response(json_data):
