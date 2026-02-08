@@ -1,6 +1,5 @@
 """REST client handling, including KlaviyoStream base class."""
 
-import re
 from datetime import datetime
 from typing import Any, Dict, Optional, Callable
 
@@ -123,24 +122,24 @@ class KlaviyoStream(RESTStream):
     def get_jsonschema_type(self, obj):
         dtype = type(obj)
 
-        if dtype == int:
+        if dtype is int:
             return th.IntegerType()
-        if dtype == float:
+        if dtype is float:
             return th.NumberType()
-        if dtype == str:
+        if dtype is str:
             if self.is_unix_timestamp(obj):
                 return th.DateTimeType()
             return th.StringType()
-        if dtype == bool:
+        if dtype is bool:
             return th.BooleanType()
-        if dtype == list:
+        if dtype is list:
             if len(obj) > 0:
                 return th.ArrayType(self.get_jsonschema_type(obj[0]))
             else:
                 return th.ArrayType(
                     th.CustomType({"type": ["string", "number", "object"]})
                 )
-        if dtype == dict:
+        if dtype is dict:
             obj_props = []
             for key in obj.keys():
                 obj_props.append(th.Property(key, self.get_jsonschema_type(obj[key])))
