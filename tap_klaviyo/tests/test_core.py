@@ -1,6 +1,6 @@
 """Tests standard tap features using the built-in SDK tests library."""
 
-from singer_sdk.testing import get_standard_tap_tests
+from hotglue_singer_sdk.testing import get_standard_tap_tests
 from tap_klaviyo.tap import TapKlaviyo
 
 

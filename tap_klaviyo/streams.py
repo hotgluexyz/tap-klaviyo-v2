@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, Optional, List
 from tap_klaviyo.client import KlaviyoStream
-from singer_sdk import typing as th
+from hotglue_singer_sdk import typing as th
 from datetime import datetime, timedelta, timezone
 from pendulum import parse
 

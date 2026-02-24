@@ -6,11 +6,11 @@ from typing import Any, Dict, Optional, Callable
 import requests
 from backports.cached_property import cached_property
 from pendulum import parse
-from singer_sdk import typing as th
-from singer_sdk.authenticators import APIKeyAuthenticator
-from singer_sdk.exceptions import FatalAPIError, RetriableAPIError
-from singer_sdk.helpers.jsonpath import extract_jsonpath
-from singer_sdk.streams import RESTStream
+from hotglue_singer_sdk import typing as th
+from hotglue_singer_sdk.authenticators import APIKeyAuthenticator
+from hotglue_singer_sdk.exceptions import FatalAPIError, RetriableAPIError
+from hotglue_singer_sdk.helpers.jsonpath import extract_jsonpath
+from hotglue_singer_sdk.streams import RESTStream
 
 from tap_klaviyo.auth import KlaviyoAuthenticator
 from urllib.parse import urlparse, parse_qs

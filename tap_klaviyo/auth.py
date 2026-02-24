@@ -7,8 +7,8 @@ from typing import Optional
 
 import backoff
 import requests
-from singer_sdk.authenticators import OAuthAuthenticator, SingletonMeta
-from singer_sdk.streams import Stream as RESTStreamBase
+from hotglue_singer_sdk.authenticators import OAuthAuthenticator, SingletonMeta
+from hotglue_singer_sdk.streams import Stream as RESTStreamBase
 
 
 class KlaviyoAuthenticator(OAuthAuthenticator, metaclass=SingletonMeta):
