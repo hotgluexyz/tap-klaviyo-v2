@@ -247,6 +247,22 @@ class KlaviyoStream(RESTStream):
             property_list["properties"].update(th.Property(self.replication_key,th.DateTimeType).to_dict())
         return property_list
 
+    def _is_permission_denied_response(self, response: requests.Response) -> bool:
+        """True if response is 403 with a permission_denied error in the body."""
+        if response.status_code != 403:
+            return False
+        try:
+            body = response.json()
+        except Exception:
+            return False
+        errors = body.get("errors") if isinstance(body, dict) else []
+        if not isinstance(errors, list):
+            return False
+        return any(
+            isinstance(e, dict) and e.get("code") == "permission_denied"
+            for e in errors
+        )
+    
     def get_data(self, method: str, url: str, headers: dict) -> list:
         response = requests.request(
             method=method,
@@ -255,7 +271,7 @@ class KlaviyoStream(RESTStream):
         )
         if response.status_code == 200:
             return response.json()["data"]
-        elif response.status_code == 403 and response.json().get("errors", {})[0].get("code") == "permission_denied": #check if any on the array
+        elif self._is_permission_denied_response(response):
             raise MissingPermissionsError("You are missing permissions to access this stream")
         else:
             raise Exception(
