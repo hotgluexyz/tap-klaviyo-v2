@@ -9,7 +9,7 @@ import backoff
 import requests
 from hotglue_singer_sdk.authenticators import OAuthAuthenticator, SingletonMeta
 from hotglue_singer_sdk.streams import Stream as RESTStreamBase
-
+from hotglue_singer_sdk.tap_base import InvalidCredentialsError
 
 class KlaviyoAuthenticator(OAuthAuthenticator, metaclass=SingletonMeta):
     """Authenticator class for Klaviyo."""
@@ -82,9 +82,9 @@ class KlaviyoAuthenticator(OAuthAuthenticator, metaclass=SingletonMeta):
             token_response.raise_for_status()
             self.logger.info("OAuth authorization attempt was successful.")
         except Exception as ex:
-            raise Exception(
-                f"Failed OAuth login, response was '{token_response.text()}'. {ex}"
-            )
+            raise InvalidCredentialsError(
+                f"Failed OAuth login, response was '{token_response.text}'. {ex}"
+            ) from ex
         token_json = token_response.json()
         # Log the refresh_token
         self.logger.info(f"Latest refresh token: {token_json['refresh_token']}")

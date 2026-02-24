@@ -11,6 +11,8 @@ from hotglue_singer_sdk.authenticators import APIKeyAuthenticator
 from hotglue_singer_sdk.exceptions import FatalAPIError, RetriableAPIError
 from hotglue_singer_sdk.helpers.jsonpath import extract_jsonpath
 from hotglue_singer_sdk.streams import RESTStream
+#from hotglue_singer_sdk.tap_base import InvalidCredentialsError
+from exceptions import MissingPermissionsError
 
 from tap_klaviyo.auth import KlaviyoAuthenticator
 from urllib.parse import urlparse, parse_qs
@@ -253,6 +255,8 @@ class KlaviyoStream(RESTStream):
         )
         if response.status_code == 200:
             return response.json()["data"]
+        elif response.status_code == 403 and response.json().get("errors", {})[0].get("code") == "permission_denied": #check if any on the array
+            raise MissingPermissionsError(f"You are missing permissions to access this stream")
         else:
             raise Exception(
                 f"There was an error when fetching data for schemas {response.text}"

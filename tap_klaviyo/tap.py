@@ -5,6 +5,9 @@ from typing import List
 from hotglue_singer_sdk import Stream, Tap
 from hotglue_singer_sdk import typing as th
 
+from exceptions import MissingPermissionsError
+
+
 from tap_klaviyo.streams import (
     ContactsStream,
     EventsStream,
@@ -95,8 +98,12 @@ class TapKlaviyo(Tap):
             try:
                 stream = stream_class(tap=self)
                 discovered_streams.append(stream)
-            except Exception as e:
+            except MissingPermissionsError as e:
                 self.logger.error(f"Error discovering stream {stream_class}: {e}")
+            ## what are the error we get if we missing permission to the stream?
+            ##now, if stream fail, we go to next one, doesnt matter the reason;
+            ##should be: just go to next stream in case you dont have permission to the current stream;
+            ##todo - differenciate between wrong credentials and no stream access;
         
         # fetch all metrics (unless they are missing from the existing catalog)
         is_sync = self.input_catalog is not None
