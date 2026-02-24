@@ -4,8 +4,9 @@ from typing import List
 
 from hotglue_singer_sdk import Stream, Tap
 from hotglue_singer_sdk import typing as th
+from tap_klaviyo.auth import KlaviyoAuthenticator
 
-from exceptions import MissingPermissionsError
+from tap_klaviyo.exceptions import MissingPermissionsError
 
 
 from tap_klaviyo.streams import (
@@ -32,6 +33,13 @@ class TapKlaviyo(Tap):
     """Klaviyo tap class."""
 
     name = "tap-klaviyo"
+
+    @classmethod
+    def access_token_support(cls, connector=None):
+        """Return authenticator class and auth endpoint for token refresh."""
+        authenticator = KlaviyoAuthenticator
+        auth_endpoint = "https://a.klaviyo.com/oauth/token"
+        return authenticator, auth_endpoint
 
     def __init__(
         self,
