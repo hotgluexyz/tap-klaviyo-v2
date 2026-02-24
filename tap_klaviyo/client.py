@@ -256,7 +256,7 @@ class KlaviyoStream(RESTStream):
         if response.status_code == 200:
             return response.json()["data"]
         elif response.status_code == 403 and response.json().get("errors", {})[0].get("code") == "permission_denied": #check if any on the array
-            raise MissingPermissionsError(f"You are missing permissions to access this stream")
+            raise MissingPermissionsError("You are missing permissions to access this stream")
         else:
             raise Exception(
                 f"There was an error when fetching data for schemas {response.text}"
