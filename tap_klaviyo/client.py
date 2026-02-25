@@ -6,11 +6,13 @@ from typing import Any, Dict, Optional, Callable
 import requests
 from backports.cached_property import cached_property
 from pendulum import parse
-from singer_sdk import typing as th
-from singer_sdk.authenticators import APIKeyAuthenticator
-from singer_sdk.exceptions import FatalAPIError, RetriableAPIError
-from singer_sdk.helpers.jsonpath import extract_jsonpath
-from singer_sdk.streams import RESTStream
+from hotglue_singer_sdk import typing as th
+from hotglue_singer_sdk.authenticators import APIKeyAuthenticator
+from hotglue_singer_sdk.exceptions import FatalAPIError, RetriableAPIError
+from hotglue_singer_sdk.helpers.jsonpath import extract_jsonpath
+from hotglue_singer_sdk.streams import RESTStream
+
+from tap_klaviyo.exceptions import MissingPermissionsError
 
 from tap_klaviyo.auth import KlaviyoAuthenticator
 from urllib.parse import urlparse, parse_qs
@@ -245,6 +247,22 @@ class KlaviyoStream(RESTStream):
             property_list["properties"].update(th.Property(self.replication_key,th.DateTimeType).to_dict())
         return property_list
 
+    def _is_permission_denied_response(self, response: requests.Response) -> bool:
+        """True if response is 403 with a permission_denied error in the body."""
+        if response.status_code != 403:
+            return False
+        try:
+            body = response.json()
+        except Exception:
+            return False
+        errors = body.get("errors") if isinstance(body, dict) else []
+        if not isinstance(errors, list):
+            return False
+        return any(
+            isinstance(e, dict) and e.get("code") == "permission_denied"
+            for e in errors
+        )
+    
     def get_data(self, method: str, url: str, headers: dict) -> list:
         response = requests.request(
             method=method,
@@ -253,6 +271,8 @@ class KlaviyoStream(RESTStream):
         )
         if response.status_code == 200:
             return response.json()["data"]
+        elif self._is_permission_denied_response(response):
+            raise MissingPermissionsError("You are missing permissions to access this stream")
         else:
             raise Exception(
                 f"There was an error when fetching data for schemas {response.text}"

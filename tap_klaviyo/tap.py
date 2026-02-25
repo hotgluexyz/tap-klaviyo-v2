@@ -2,8 +2,12 @@
 
 from typing import List
 
-from singer_sdk import Stream, Tap
-from singer_sdk import typing as th
+from hotglue_singer_sdk import Stream, Tap
+from hotglue_singer_sdk import typing as th
+from tap_klaviyo.auth import KlaviyoAuthenticator
+
+from tap_klaviyo.exceptions import MissingPermissionsError
+
 
 from tap_klaviyo.streams import (
     ContactsStream,
@@ -29,6 +33,13 @@ class TapKlaviyo(Tap):
     """Klaviyo tap class."""
 
     name = "tap-klaviyo"
+
+    @classmethod
+    def access_token_support(cls, connector=None):
+        """Return authenticator class and auth endpoint for token refresh."""
+        authenticator = KlaviyoAuthenticator
+        auth_endpoint = "https://a.klaviyo.com/oauth/token"
+        return authenticator, auth_endpoint
 
     def __init__(
         self,
@@ -95,7 +106,7 @@ class TapKlaviyo(Tap):
             try:
                 stream = stream_class(tap=self)
                 discovered_streams.append(stream)
-            except Exception as e:
+            except MissingPermissionsError as e:
                 self.logger.error(f"Error discovering stream {stream_class}: {e}")
         
         # fetch all metrics (unless they are missing from the existing catalog)
