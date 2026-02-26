@@ -4,6 +4,7 @@ from typing import List
 
 from hotglue_singer_sdk import Stream, Tap
 from hotglue_singer_sdk import typing as th
+from hotglue_singer_sdk.helpers.capabilities import AlertingLevel
 from tap_klaviyo.auth import KlaviyoAuthenticator
 
 from tap_klaviyo.exceptions import MissingPermissionsError
@@ -33,6 +34,7 @@ class TapKlaviyo(Tap):
     """Klaviyo tap class."""
 
     name = "tap-klaviyo"
+    alerting_level = AlertingLevel.ERROR
 
     @classmethod
     def access_token_support(cls, connector=None):
