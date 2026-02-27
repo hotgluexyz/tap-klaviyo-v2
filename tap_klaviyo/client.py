@@ -12,7 +12,7 @@ from hotglue_singer_sdk.exceptions import FatalAPIError, RetriableAPIError
 from hotglue_singer_sdk.helpers.jsonpath import extract_jsonpath
 from hotglue_singer_sdk.streams import RESTStream
 
-from tap_klaviyo.exceptions import MissingPermissionsError
+from tap_klaviyo.exceptions import MissingPermissionsError, InvalidCredentialsError
 
 from tap_klaviyo.auth import KlaviyoAuthenticator
 from urllib.parse import urlparse, parse_qs
@@ -247,9 +247,11 @@ class KlaviyoStream(RESTStream):
             property_list["properties"].update(th.Property(self.replication_key,th.DateTimeType).to_dict())
         return property_list
 
-    def _is_permission_denied_response(self, response: requests.Response) -> bool:
-        """True if response is 403 with a permission_denied error in the body."""
-        if response.status_code != 403:
+    def _is_error_response(
+        self, response: requests.Response, status_code: int, error_code: str
+    ) -> bool:
+        """True if response has the given status_code and an error with the given code in the body."""
+        if response.status_code != status_code:
             return False
         try:
             body = response.json()
@@ -259,10 +261,17 @@ class KlaviyoStream(RESTStream):
         if not isinstance(errors, list):
             return False
         return any(
-            isinstance(e, dict) and e.get("code") == "permission_denied"
-            for e in errors
+            isinstance(e, dict) and e.get("code") == error_code for e in errors
         )
-    
+
+    def _is_permission_denied_response(self, response: requests.Response) -> bool:
+        """True if response is 403 with a permission_denied error in the body."""
+        return self._is_error_response(response, 403, "permission_denied")
+
+    def _is_authentication_failed_response(self, response: requests.Response) -> bool:
+        """True if response is 401 with authentication_failed in the body."""
+        return self._is_error_response(response, 401, "authentication_failed")
+
     def get_data(self, method: str, url: str, headers: dict) -> list:
         response = requests.request(
             method=method,
@@ -273,6 +282,8 @@ class KlaviyoStream(RESTStream):
             return response.json()["data"]
         elif self._is_permission_denied_response(response):
             raise MissingPermissionsError("You are missing permissions to access this stream")
+        elif self._is_authentication_failed_response(response):
+            raise InvalidCredentialsError("Incorrect authentication credentials.")
         else:
             raise Exception(
                 f"There was an error when fetching data for schemas {response.text}"
