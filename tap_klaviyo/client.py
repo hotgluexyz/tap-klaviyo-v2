@@ -12,7 +12,7 @@ from hotglue_singer_sdk.exceptions import FatalAPIError, RetriableAPIError
 from hotglue_singer_sdk.helpers.jsonpath import extract_jsonpath
 from hotglue_singer_sdk.streams import RESTStream
 
-from tap_klaviyo.exceptions import MissingPermissionsError
+from tap_klaviyo.exceptions import MissingPermissionsError, InvalidCredentialsError
 
 from tap_klaviyo.auth import KlaviyoAuthenticator
 from urllib.parse import urlparse, parse_qs
@@ -263,6 +263,22 @@ class KlaviyoStream(RESTStream):
             for e in errors
         )
     
+    def _is_authentication_failed_response(self, response: requests.Response) -> bool:
+        """True if response is 401 with authentication_failed in the body."""
+        if response.status_code != 401:
+            return False
+        try:
+            body = response.json()
+        except Exception:
+            return False
+        errors = body.get("errors") if isinstance(body, dict) else []
+        if not isinstance(errors, list):
+            return False
+        return any(
+            isinstance(e, dict) and e.get("code") == "authentication_failed"
+            for e in errors
+        )
+    
     def get_data(self, method: str, url: str, headers: dict) -> list:
         response = requests.request(
             method=method,
@@ -273,6 +289,8 @@ class KlaviyoStream(RESTStream):
             return response.json()["data"]
         elif self._is_permission_denied_response(response):
             raise MissingPermissionsError("You are missing permissions to access this stream")
+        elif self._is_authentication_failed_response(response):
+            raise InvalidCredentialsError("Incorrect authentication credentials.")
         else:
             raise Exception(
                 f"There was an error when fetching data for schemas {response.text}"
