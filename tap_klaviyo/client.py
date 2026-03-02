@@ -248,11 +248,13 @@ class KlaviyoStream(RESTStream):
         return property_list
 
     def _is_error_response(
-        self, response: requests.Response, status_code: int, error_code: str
+        self, response: requests.Response, status_code: int, error_code: str | None = None
     ) -> bool:
-        """True if response has the given status_code and an error with the given code in the body."""
+        """True if response has the given status_code; if error_code is given, also requires that code in the body."""
         if response.status_code != status_code:
             return False
+        if error_code is None:
+            return True
         try:
             body = response.json()
         except Exception:
@@ -269,8 +271,8 @@ class KlaviyoStream(RESTStream):
         return self._is_error_response(response, 403, "permission_denied")
 
     def _is_authentication_failed_response(self, response: requests.Response) -> bool:
-        """True if response is 401 with authentication_failed in the body."""
-        return self._is_error_response(response, 401, "authentication_failed")
+        """True if response is 401."""
+        return self._is_error_response(response, 401)
 
     def get_data(self, method: str, url: str, headers: dict) -> list:
         response = requests.request(
