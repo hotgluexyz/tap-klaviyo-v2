@@ -286,9 +286,11 @@ class KlaviyoStream(RESTStream):
             raise MissingPermissionsError("You are missing permissions to access this stream")
         elif self._is_authentication_failed_response(response):
             raise InvalidCredentialsError("Incorrect authentication credentials.")
+        elif response.status_code == 429 or response.status_code >= 500:
+            raise RetriableAPIError(f"Retriable API Error fetching data for schemas. Status code: {response.status_code}, Response: {response.text}")
         else:
             raise Exception(
-                f"There was an error when fetching data for schemas {response.text}"
+                f"There was an error when fetching data for schemas. Status code: {response.status_code}, Response: {response.text}"
             )
 
     @cached_property
