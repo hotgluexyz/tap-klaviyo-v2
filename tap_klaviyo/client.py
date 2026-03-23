@@ -283,9 +283,9 @@ class KlaviyoStream(RESTStream):
         if response.status_code == 200:
             return response.json()["data"]
         elif self._is_permission_denied_response(response):
-            raise MissingPermissionsError("You are missing permissions to access this stream")
+            raise MissingPermissionsError(f"You are missing permissions to access this stream: {response.text}")
         elif self._is_authentication_failed_response(response):
-            raise InvalidCredentialsError("Incorrect authentication credentials.")
+            raise InvalidCredentialsError(f"Incorrect authentication credentials: {response.text}")
         elif response.status_code == 429 or response.status_code >= 500:
             raise RetriableAPIError(f"Retriable API Error fetching data for schemas. Status code: {response.status_code}, Response: {response.text}")
         else:
