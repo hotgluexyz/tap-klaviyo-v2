@@ -34,7 +34,7 @@ class TapKlaviyo(Tap):
     """Klaviyo tap class."""
 
     name = "tap-klaviyo"
-    alerting_level = AlertingLevel.WARNING
+    alerting_level = AlertingLevel.ERROR
 
     @classmethod
     def access_token_support(cls, connector=None):
