@@ -282,16 +282,25 @@ class KlaviyoStream(RESTStream):
         )
         if response.status_code == 200:
             return response.json()["data"]
-        elif self._is_permission_denied_response(response):
-            raise MissingPermissionsError(f"You are missing permissions to access this stream: {response.text}")
-        elif self._is_authentication_failed_response(response):
-            raise InvalidCredentialsError(f"Incorrect authentication credentials: {response.text}")
-        elif response.status_code == 429 or response.status_code >= 500:
-            raise RetriableAPIError(f"Retriable API Error fetching data for schemas. Status code: {response.status_code}, Response: {response.text}")
-        else:
-            raise Exception(
-                f"There was an error when fetching data for schemas. Status code: {response.status_code}, Response: {response.text}"
-            )
+
+        response_text = response.text
+        try:
+            json_response = response.json()
+            errors = json_response.get("errors")
+            error_message = next(iter(errors), None)
+            error_message.pop("id", None)
+            response_text = str(error_message)
+        finally:
+            if self._is_permission_denied_response(response):
+                raise MissingPermissionsError(f"You are missing permissions to access this stream: {response_text}")
+            elif self._is_authentication_failed_response(response):
+                raise InvalidCredentialsError(f"Incorrect authentication credentials: {response_text}")
+            elif response.status_code == 429 or response.status_code >= 500:
+                raise RetriableAPIError(f"Retriable API Error fetching data for schemas. Status code: {response.status_code}, Response: {response_text}")
+            else:
+                raise Exception(
+                    f"There was an error when fetching data for schemas. Status code: {response.status_code}, Response: {response_text}"
+                )
 
     @cached_property
     def schema(self) -> dict:
