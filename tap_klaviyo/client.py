@@ -279,6 +279,7 @@ class KlaviyoStream(RESTStream):
             method=method,
             url=url,
             headers=headers,
+            timeout=self.timeout,
         )
         if response.status_code == 200:
             return response.json()["data"]
