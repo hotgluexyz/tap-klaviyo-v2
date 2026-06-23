@@ -125,6 +125,16 @@ class CampaignsStream(KlaviyoStream):
     replication_key = "updated_at"
     channels = ("email", "sms")
 
+    @property
+    def state_partitioning_keys(self) -> Optional[List[str]]:
+        """Keep independent bookmarks per channel."""
+        return ["channel"]
+
+    @property
+    def partitions(self) -> Optional[List[dict]]:
+        """Sync each channel separately so bookmarks do not bleed across channels."""
+        return [{"channel": channel} for channel in self.channels]
+
     def _channel_filter(self, channel: str) -> str:
         return f"equals(messages.channel,'{channel}')"
 
@@ -174,13 +184,6 @@ class CampaignsStream(KlaviyoStream):
         if context and context.get("channel"):
             child_context["channel"] = context["channel"]
         return child_context
-
-    def get_records(self, context: Optional[dict]):
-        """Fetch campaigns for each supported channel."""
-        context = context or {}
-        for channel in self.channels:
-            channel_context = {**context, "channel": channel}
-            yield from super().get_records(channel_context)
 
     def post_process(self, row, context):
         row = super().post_process(row, context)
