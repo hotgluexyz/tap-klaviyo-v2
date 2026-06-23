@@ -121,6 +121,38 @@ class KlaviyoStream(RESTStream):
         except:
             return False
 
+    def _looks_like_datetime(self, value: Any) -> bool:
+        if not isinstance(value, str):
+            return False
+        try:
+            parse(value)
+            return True
+        except Exception:
+            return False
+
+    def _flatten_discovery_record(self, record: dict) -> dict:
+        record = dict(record)
+        attributes = record.pop("attributes", {})
+        if attributes:
+            record.update(attributes)
+        return record
+
+    def _first_non_null_value(self, records: list, field_name: str) -> Any:
+        for record in records:
+            value = record.get(field_name)
+            if value is not None:
+                return value
+        return None
+
+    def _infer_property_type(self, name: str, value: Any) -> th.Property:
+        if name in ["event_properties", "properties"]:
+            return th.Property(name, th.CustomType({"type": ["object", "string"]}))
+        if value is None:
+            return th.Property(name, th.StringType)
+        if self._looks_like_datetime(value):
+            return th.Property(name, th.DateTimeType)
+        return th.Property(name, self.get_jsonschema_type(value))
+
     def get_jsonschema_type(self, obj):
         dtype = type(obj)
 
@@ -211,32 +243,21 @@ class KlaviyoStream(RESTStream):
         records = self.request_decorator(self.get_data)(request_type, url, headers)
 
         if len(records) > 0:
-            properties = []
-            property_names = set()
+            flattened_records = [self._flatten_discovery_record(record) for record in records]
+            property_names: list[str] = []
+            seen: set[str] = set()
+            for record in flattened_records:
+                for name in record.keys():
+                    if name not in seen:
+                        seen.add(name)
+                        property_names.append(name)
 
-            record = records[0]
-            # put attributes fields at header level
-            attributes = record.pop("attributes", {})
-            if attributes:
-                record.update(attributes)
-
-            # Loop through each key in the object
-            for name in record.keys():
-                if name in property_names:
-                    continue
-                # Add the new property to our list
-                property_names.add(name)
-                if name in  ["event_properties", "properties"]:
-                    properties.append(
-                        th.Property(name, th.CustomType({"type": ["object", "string"]}))
-                    ) 
-                elif self.is_unix_timestamp(record[name]):
-                    properties.append(th.Property(name, th.DateTimeType))
-                else:
-                    properties.append(
-                        th.Property(name, self.get_jsonschema_type(record[name]))
-                    )
-            # Return the list as a JSON Schema dictionary object
+            properties = [
+                self._infer_property_type(
+                    name, self._first_non_null_value(flattened_records, name)
+                )
+                for name in property_names
+            ]
             property_list = th.PropertiesList(*properties).to_dict()
         else:
             property_list = th.PropertiesList(
