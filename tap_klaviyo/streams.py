@@ -168,9 +168,8 @@ class CampaignsStream(KlaviyoStream):
 
     def get_data(self, method: str, url: str, headers: dict) -> list:
         """Fetch sample records for schema discovery with a channel filter."""
-        params = self.get_url_params({"channel": self.channels[0]}, None)
-        if params:
-            url = f"{url}?{urlencode(params)}"
+        params = {"filter": self._channel_filter(self.channels[0])}
+        url = f"{url}?{urlencode(params)}"
         return super().get_data(method, url, headers)
 
     def get_schema(self) -> dict:
