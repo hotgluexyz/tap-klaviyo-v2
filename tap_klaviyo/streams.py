@@ -213,13 +213,11 @@ class CampaignMessagesStream(KlaviyoStream):
     def get_data(self, method: str, url: str, headers: dict) -> list:
         """Fetch parent campaign id for schema discovery with a channel filter."""
         if url.rstrip("/").endswith(self.parent_stream_type.path):
-            params = self.parent_stream_type.get_url_params(
-                self.parent_stream_type(tap=self._tap),
-                {"channel": self.parent_stream_type.channels[0]},
-                None,
-            )
-            if params:
-                url = f"{url}?{urlencode(params)}"
+            parent = self.parent_stream_type(tap=self._tap)
+            params = {
+                "filter": parent._channel_filter(self.parent_stream_type.channels[0])
+            }
+            url = f"{url}?{urlencode(params)}"
         return super().get_data(method, url, headers)
 
     def get_schema(self) -> dict:

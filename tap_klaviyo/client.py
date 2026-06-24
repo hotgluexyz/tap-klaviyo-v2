@@ -235,12 +235,19 @@ class KlaviyoStream(RESTStream):
         # discover for child streams
         if self.parent_stream_type:
             parent_url = self.url_base + self.parent_stream_type.path
-            id = self.request_decorator(self.get_data)(request_type, parent_url, headers)
-            if id:
-                id = id[0]["id"]
-            url = url.replace("{id}", id)
-
-        records = self.request_decorator(self.get_data)(request_type, url, headers)
+            parent_records = self.request_decorator(self.get_data)(
+                request_type, parent_url, headers
+            )
+            parent_id = parent_records[0]["id"] if parent_records else None
+            if parent_id:
+                url = url.replace("{id}", parent_id)
+                records = self.request_decorator(self.get_data)(
+                    request_type, url, headers
+                )
+            else:
+                records = []
+        else:
+            records = self.request_decorator(self.get_data)(request_type, url, headers)
 
         if len(records) > 0:
             flattened_records = [self._flatten_discovery_record(record) for record in records]
