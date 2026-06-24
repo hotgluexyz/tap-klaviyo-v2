@@ -11,6 +11,8 @@ from tap_klaviyo.exceptions import MissingPermissionsError
 
 
 from tap_klaviyo.streams import (
+    CampaignMessagesStream,
+    CampaignsStream,
     ContactsStream,
     EventsStream,
     ListMembersStream,
@@ -18,6 +20,7 @@ from tap_klaviyo.streams import (
     MetricsStream,
     ReviewsStream,
     ReportStream,
+    TemplatesStream,
 )
 
 STREAM_TYPES = [
@@ -27,6 +30,9 @@ STREAM_TYPES = [
     EventsStream,
     ListMembersStream,
     ReviewsStream,
+    CampaignsStream,
+    CampaignMessagesStream,
+    TemplatesStream,
 ]
 
 

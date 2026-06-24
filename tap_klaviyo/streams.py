@@ -1,6 +1,7 @@
 """Stream type classes for tap-klaviyo."""
 
 from typing import Any, Dict, Optional, List
+from urllib.parse import urlencode
 from tap_klaviyo.client import KlaviyoStream
 from hotglue_singer_sdk import typing as th
 from datetime import datetime, timedelta, timezone
@@ -113,6 +114,138 @@ class ListMembersStream(KlaviyoStream):
     primary_keys = ["id"]
     replication_key = "joined_group_at"
     parent_stream_type = ListsStream
+
+
+class CampaignsStream(KlaviyoStream):
+    """Klaviyo campaigns stream."""
+
+    name = "campaigns"
+    path = "/campaigns"
+    primary_keys = ["id"]
+    replication_key = "updated_at"
+    channels = ("email", "sms")
+
+    @property
+    def state_partitioning_keys(self) -> Optional[List[str]]:
+        """Keep independent bookmarks per channel."""
+        return ["channel"]
+
+    @property
+    def partitions(self) -> Optional[List[dict]]:
+        """Sync each channel separately so bookmarks do not bleed across channels."""
+        return [{"channel": channel} for channel in self.channels]
+
+    def _channel_filter(self, channel: str) -> str:
+        return f"equals(messages.channel,'{channel}')"
+
+    def get_url_params(
+        self, context: Optional[dict], next_page_token: Optional[Any]
+    ) -> Dict[str, Any]:
+        """Return URL params with the required channel filter."""
+        params: dict = {}
+        if next_page_token:
+            params["page[cursor]"] = next_page_token
+
+        channel = (context or {}).get("channel", self.channels[0])
+        channel_filter = self._channel_filter(channel)
+        start_date = self.get_starting_time(context)
+        if self.replication_key and start_date:
+            start_date = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+            if self.config.get("end_date"):
+                end_date = parse(self.config.get("end_date"))
+                end_date = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+                params["filter"] = (
+                    f"and({channel_filter},greater-than({self.replication_key},{start_date}),"
+                    f"less-or-equal({self.replication_key},{end_date}))"
+                )
+            else:
+                params["filter"] = (
+                    f"and({channel_filter},greater-than({self.replication_key},{start_date}))"
+                )
+        else:
+            params["filter"] = channel_filter
+        return params
+
+    def get_data(self, method: str, url: str, headers: dict) -> list:
+        """Fetch sample records for schema discovery with a channel filter."""
+        params = {"filter": self._channel_filter(self.channels[0])}
+        url = f"{url}?{urlencode(params)}"
+        return super().get_data(method, url, headers)
+
+    def get_schema(self) -> dict:
+        schema = super().get_schema()
+        schema.setdefault("properties", {})
+        schema["properties"].update(th.Property("channel", th.StringType).to_dict())
+        return schema
+
+    def get_child_context(self, record, context):
+        child_context = {"id": record["id"]}
+        if context and context.get("channel"):
+            child_context["channel"] = context["channel"]
+        return child_context
+
+    def post_process(self, row, context):
+        row = super().post_process(row, context)
+        if context and context.get("channel"):
+            row["channel"] = context["channel"]
+        return row
+
+
+class CampaignMessagesStream(KlaviyoStream):
+    """Campaign message details for each campaign (child of campaigns)."""
+
+    name = "campaign_messages"
+    path = "/campaigns/{id}/campaign-messages"
+    primary_keys = ["id"]
+    replication_key = None
+    parent_stream_type = CampaignsStream
+
+    def get_url_params(
+        self, context: Optional[dict], next_page_token: Optional[Any]
+    ) -> Dict[str, Any]:
+        """Return URL params; nested endpoint does not support date filters."""
+        params: dict = {}
+        if next_page_token:
+            params["page[cursor]"] = next_page_token
+        return params
+
+    def get_data(self, method: str, url: str, headers: dict) -> list:
+        """Fetch parent campaign id for schema discovery with a channel filter."""
+        if url.rstrip("/").endswith(self.parent_stream_type.path):
+            parent = self.parent_stream_type(tap=self._tap)
+            params = {
+                "filter": parent._channel_filter(self.parent_stream_type.channels[0])
+            }
+            url = f"{url}?{urlencode(params)}"
+        return super().get_data(method, url, headers)
+
+    def get_schema(self) -> dict:
+        schema = super().get_schema()
+        schema.setdefault("properties", {})
+        schema["properties"].update(th.Property("campaign_id", th.StringType).to_dict())
+        schema["properties"].update(th.Property("template_id", th.StringType).to_dict())
+        return schema
+
+    def post_process(self, row, context):
+        row = super().post_process(row, context)
+        if context and context.get("id"):
+            row["campaign_id"] = context["id"]
+        template = (row.get("relationships") or {}).get("template", {}).get("data")
+        if template and template.get("id"):
+            row["template_id"] = template["id"]
+        return row
+
+
+class TemplatesStream(KlaviyoStream):
+    """Standalone incremental stream for Klaviyo templates.
+
+    Join to campaigns via campaign_messages.template_id -> templates.id.
+    """
+
+    name = "templates"
+    path = "/templates"
+    primary_keys = ["id"]
+    replication_key = "updated"
 
 
 class ReviewsStream(KlaviyoStream):
