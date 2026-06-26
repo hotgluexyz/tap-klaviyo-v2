@@ -148,10 +148,13 @@ class KlaviyoStream(RESTStream):
         if name in ["event_properties", "properties"]:
             return th.Property(name, th.CustomType({"type": ["object", "string"]}))
         if value is None:
-            return th.Property(name, th.StringType)
+            return th.Property(name, self._unknown_jsonschema_type())
         if self._looks_like_datetime(value):
             return th.Property(name, th.DateTimeType)
         return th.Property(name, self.get_jsonschema_type(value))
+
+    def _unknown_jsonschema_type(self):
+        return th.CustomType({"type": ["string", "number", "object", "boolean"]})
 
     def get_jsonschema_type(self, obj):
         dtype = type(obj)
@@ -170,18 +173,16 @@ class KlaviyoStream(RESTStream):
             if len(obj) > 0:
                 return th.ArrayType(self.get_jsonschema_type(obj[0]))
             else:
-                return th.ArrayType(
-                    th.CustomType({"type": ["string", "number", "object"]})
-                )
+                return th.ArrayType(self._unknown_jsonschema_type())
         if dtype is dict:
             obj_props = []
             for key in obj.keys():
                 obj_props.append(th.Property(key, self.get_jsonschema_type(obj[key])))
             if not obj_props:
-                return th.CustomType({"type": ["string", "number", "object"]})
+                return self._unknown_jsonschema_type()
             return th.ObjectType(*obj_props)
         else:
-            return th.CustomType({"type": ["string", "number", "object"]})
+            return self._unknown_jsonschema_type()
 
     def get_abs_path(self, path):
         return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
