@@ -148,7 +148,7 @@ class KlaviyoStream(RESTStream):
         if name in ["event_properties", "properties"]:
             return th.Property(name, th.CustomType({"type": ["object", "string"]}))
         if value is None:
-            return th.Property(name, self._unknown_jsonschema_type())
+            return th.Property(name, th.StringType)
         if self._looks_like_datetime(value):
             return th.Property(name, th.DateTimeType)
         return th.Property(name, self.get_jsonschema_type(value))
