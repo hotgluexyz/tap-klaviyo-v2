@@ -123,14 +123,12 @@ class KlaviyoStream(RESTStream):
 
     def _is_valid_unix_timestamp(self, value: str) -> bool:
         try:
-            if len(value) not in [10, 13]:
-                return False
             if len(value) == 13:
-                value = int(value) / 1000
+                return from_timestamp(int(value) / 1000)
+            elif len(value) == 10:
+                return from_timestamp(int(value))
             else:
-                value = int(value)
-            from_timestamp(value)
-            return True
+                return False
         except Exception:
             return False
 
