@@ -167,12 +167,27 @@ class KlaviyoStream(RESTStream):
             return th.Property(name, th.StringType)
         if self._looks_like_datetime(value):
             return th.Property(name, th.DateTimeType)
-        return th.Property(name, self.get_jsonschema_type(value))
+        return th.Property(name, self.get_jsonschema_type(value, top_level=True))
 
-    def _unknown_jsonschema_type(self):
-        return th.CustomType({"type": ["string", "number", "object", "boolean"]})
+    def _unknown_jsonschema_type(self, include_boolean: bool = True):
+        """Permissive fallback for values whose type can't be inferred.
 
-    def get_jsonschema_type(self, obj):
+        Includes "boolean" for nested/unpredictable values so they validate when they
+        later arrive as a bool instead of crashing the target.
+
+        For TOP-LEVEL fields, callers pass include_boolean=False. The singer SDK record
+        conformer (conform_record_data_types) only inspects top-level properties and
+        coerces any whose schema lists "boolean" via `elem != 0`, which silently turns
+        real strings/objects into True (HGI-10622: title "" -> True, render_options
+        {...} -> True). The conformer never descends into nested objects, so nested
+        fields can safely keep "boolean".
+        """
+        types = ["string", "number", "object"]
+        if include_boolean:
+            types.append("boolean")
+        return th.CustomType({"type": types})
+
+    def get_jsonschema_type(self, obj, top_level: bool = False):
         dtype = type(obj)
 
         if dtype is int:
@@ -195,10 +210,10 @@ class KlaviyoStream(RESTStream):
             for key in obj.keys():
                 obj_props.append(th.Property(key, self.get_jsonschema_type(obj[key])))
             if not obj_props:
-                return self._unknown_jsonschema_type()
+                return self._unknown_jsonschema_type(include_boolean=not top_level)
             return th.ObjectType(*obj_props)
         else:
-            return self._unknown_jsonschema_type()
+            return self._unknown_jsonschema_type(include_boolean=not top_level)
 
     def get_abs_path(self, path):
         return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)

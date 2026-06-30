@@ -62,6 +62,30 @@ def test_unknown_fallback_includes_boolean(stream):
     """The generic fallback used for nested/empty/unknown values includes boolean."""
     fallback = stream._unknown_jsonschema_type().to_dict()
     assert set(fallback["type"]) == {"string", "number", "object", "boolean"}
+    top_level = stream._unknown_jsonschema_type(include_boolean=False).to_dict()
+    assert "boolean" not in top_level["type"]
+
+
+def test_top_level_empty_object_field_excludes_boolean(stream):
+    """A top-level field empty in the sample (e.g. render_options) must not gain boolean.
+
+    Otherwise the SDK conformer coerces the real object into True (HGI-10622).
+    """
+    schema = _prop_schema(stream, "render_options", {})
+    assert "boolean" not in schema["type"]
+    assert is_boolean_type(schema) is False
+
+    record_schema = {"properties": {"render_options": schema}}
+    obj = {"shorten_links": False, "add_info_link": True}
+    out = conform_record_data_types("campaign_messages", {"render_options": obj}, record_schema, stream_logger())
+    assert out["render_options"] == obj  # object preserved, not coerced to True
+
+
+def test_nested_empty_object_field_keeps_boolean(stream):
+    """A nested empty object stays permissive (boolean allowed) since it isn't conformed."""
+    schema = _prop_schema(stream, "outer", {"inner": {}})
+    nested = schema["properties"]["inner"]
+    assert "boolean" in nested["type"]
 
 
 def stream_logger():
