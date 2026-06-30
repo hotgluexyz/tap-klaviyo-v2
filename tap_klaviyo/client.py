@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, Callable
 
 import requests
 from backports.cached_property import cached_property
-from pendulum import parse
+from pendulum import parse, from_timestamp
 from hotglue_singer_sdk import typing as th
 from hotglue_singer_sdk.authenticators import APIKeyAuthenticator
 from hotglue_singer_sdk.exceptions import FatalAPIError, RetriableAPIError
@@ -121,9 +121,25 @@ class KlaviyoStream(RESTStream):
         except:
             return False
 
+    def _is_valid_unix_timestamp(self, value: str) -> bool:
+        try:
+            if len(value) == 13:
+                return from_timestamp(int(value) / 1000)
+            elif len(value) == 10:
+                return from_timestamp(int(value))
+            else:
+                return False
+        except Exception:
+            return False
+
     def _looks_like_datetime(self, value: Any) -> bool:
         if not isinstance(value, str):
             return False
+
+        # Unix Timestamps
+        if value.isdigit():
+            return self._is_valid_unix_timestamp(value)
+
         try:
             parse(value)
             return True
