@@ -1,0 +1,367 @@
+{
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The Klaviyo campaign ID"
+    },
+    "relationships": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "campaign-messages": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "data": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "type": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            },
+            "links": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "self": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "related": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "tags": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "links": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "self": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "related": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "links": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "self": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "name": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The name of the campaign"
+    },
+    "status": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "e.g. Draft, Scheduled, Sending, Sent"
+    },
+    "archived": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "channel": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Channel (email/sms); added in post_process"
+    },
+    "audiences": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "included": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "excluded": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "send_options": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "use_smart_sending": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "ignore_unsubscribes": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "tracking_options": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "add_tracking_params": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "custom_tracking_params": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "type": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "value": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "is_tracking_clicks": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "is_tracking_opens": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "send_strategy": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "method": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "options_static": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "datetime": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
+            },
+            "is_local": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "send_past_recipients_immediately": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        },
+        "options_throttled": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "datetime": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
+            },
+            "throttle_percentage": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        },
+        "options_sto": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "date": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "created_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "scheduled_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "send_time": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "type",
+    "id"
+  ]
+}
