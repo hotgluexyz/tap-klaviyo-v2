@@ -224,25 +224,47 @@ class KlaviyoStream(RESTStream):
             return json.load(schema_file)
 
     def _fill_missing_properties(self, property_list):
+        """Merge the curated static schema (schemas/<name>.json) with discovery.
+
+        The static schema is authoritative: where it defines a property (or nested
+        property), its definition overrides whatever discovery inferred. This lets us
+        pin down fields that discovery types poorly because they are null/empty in the
+        sampled records (e.g. campaign_messages.render_options, which otherwise collapses
+        to ["string","null"]). Anything the static schema does NOT define is kept from
+        discovery, so newly added API fields are never dropped.
+        """
         try:
             default_schema = self.load_schema(self.name)
-        except:
+        except Exception:
             logging.warning(f"The stream '{self.name}' does not have a default schema.")
             return property_list
-        
-        new_properties = default_schema.get('properties', {})
 
-        def recursive_copy(source, target):
-            for key, value in source.items():
-                if isinstance(value, dict):
-                    target[key] = target.get(key, {})
-                    recursive_copy(value, target[key])
-                else:
-                    target[key] = value
+        def merge_node(static_node, discovered_node):
+            # The static node fully owns this field's own attributes (type/format/enum/
+            # description), so stale discovery artifacts (e.g. a false-positive
+            # "format": "date-time") are dropped. We only descend into nested
+            # "properties"/"items" so that fields discovered at sync time but absent
+            # from the static schema are preserved.
+            if not isinstance(discovered_node, dict):
+                return static_node
+            static_props = static_node.get('properties')
+            discovered_props = discovered_node.get('properties')
+            if isinstance(static_props, dict) or isinstance(discovered_props, dict):
+                merged_props = dict(discovered_props) if isinstance(discovered_props, dict) else {}
+                for key, sub in (static_props or {}).items():
+                    merged_props[key] = merge_node(sub, merged_props.get(key))
+                static_node['properties'] = merged_props
+            static_items = static_node.get('items')
+            if isinstance(static_items, dict):
+                static_node['items'] = merge_node(static_items, discovered_node.get('items'))
+            return static_node
 
-        recursive_copy(property_list.get('properties', {}), new_properties)
-        
-        property_list['properties'] = new_properties
+        discovered = property_list.get('properties', {})
+        merged = dict(discovered)
+        for key, sub in default_schema.get('properties', {}).items():
+            merged[key] = merge_node(sub, discovered.get(key))
+
+        property_list['properties'] = merged
         return property_list
 
     def get_schema(self) -> dict:

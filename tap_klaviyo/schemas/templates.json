@@ -1,0 +1,84 @@
+{
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The Klaviyo template ID"
+    },
+    "links": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "self": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "name": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The name of the template"
+    },
+    "editor_type": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "html": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The rendered HTML of the template"
+    },
+    "text": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The plain-text version of the template"
+    },
+    "amp": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The AMP HTML version of the template"
+    },
+    "created": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "updated": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "type",
+    "id"
+  ]
+}
