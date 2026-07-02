@@ -1,0 +1,155 @@
+{
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The Klaviyo list ID"
+    },
+    "relationships": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "profiles": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "links": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "self": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "related": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "tags": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "links": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "self": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "related": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "flow-triggers": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "links": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "self": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "related": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "links": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "self": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "name": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The name of the list"
+    },
+    "created": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "updated": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "opt_in_process": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "type",
+    "id"
+  ]
+}

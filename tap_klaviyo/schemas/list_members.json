@@ -1,0 +1,98 @@
+{
+    "type": "object",
+    "properties": {
+        "type": {"type": ["string", "null"]},
+        "id": {"type": ["string", "null"], "description": "The Klaviyo profile ID"},
+        "relationships": {
+            "type": ["object", "null"],
+            "properties": {
+                "lists": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "links": {
+                            "type": ["object", "null"],
+                            "properties": {
+                                "self": {"type": ["string", "null"]},
+                                "related": {"type": ["string", "null"]}
+                            }
+                        }
+                    }
+                },
+                "segments": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "links": {
+                            "type": ["object", "null"],
+                            "properties": {
+                                "self": {"type": ["string", "null"]},
+                                "related": {"type": ["string", "null"]}
+                            }
+                        }
+                    }
+                },
+                "push-tokens": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "links": {
+                            "type": ["object", "null"],
+                            "properties": {
+                                "self": {"type": ["string", "null"]},
+                                "related": {"type": ["string", "null"]}
+                            }
+                        }
+                    }
+                },
+                "conversation": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "links": {
+                            "type": ["object", "null"],
+                            "properties": {
+                                "self": {"type": ["string", "null"]},
+                                "related": {"type": ["string", "null"]}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "links": {
+            "type": ["object", "null"],
+            "properties": {
+                "self": {"type": ["string", "null"]}
+            }
+        },
+        "email": {"type": ["string", "null"]},
+        "phone_number": {"type": ["string", "null"]},
+        "external_id": {"type": ["string", "null"], "description": "Customer-provided external identifier (not a date)"},
+        "anonymous_id": {"type": ["string", "null"]},
+        "whatsapp_bsuid": {"type": ["string", "null"]},
+        "first_name": {"type": ["string", "null"]},
+        "last_name": {"type": ["string", "null"]},
+        "organization": {"type": ["string", "null"]},
+        "locale": {"type": ["string", "null"]},
+        "title": {"type": ["string", "null"], "description": "Job title. Kept string-only at the top level to avoid SDK boolean coercion (HGI-10622)"},
+        "image": {"type": ["string", "null"]},
+        "created": {"type": ["string", "null"], "format": "date-time"},
+        "updated": {"type": ["string", "null"], "format": "date-time"},
+        "last_event_date": {"type": ["string", "null"], "format": "date-time"},
+        "joined_group_at": {"type": ["string", "null"], "format": "date-time"},
+        "location": {
+            "type": ["object", "null"],
+            "properties": {
+                "address1": {"type": ["string", "null"]},
+                "address2": {"type": ["string", "null"]},
+                "city": {"type": ["string", "null"]},
+                "country": {"type": ["string", "null"]},
+                "latitude": {"type": ["number", "string", "null"]},
+                "longitude": {"type": ["number", "string", "null"]},
+                "region": {"type": ["string", "null"]},
+                "zip": {"type": ["string", "null"]},
+                "timezone": {"type": ["string", "null"]},
+                "ip": {"type": ["string", "null"]}
+            }
+        },
+        "properties": {"type": ["object", "string", "null"]}
+    },
+    "required": ["type", "id"]
+}
