@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any, Dict, Optional, Callable
 
 import requests
+import pendulum
 from backports.cached_property import cached_property
 from pendulum import parse, from_timestamp
 from hotglue_singer_sdk import typing as th
@@ -31,6 +32,8 @@ class KlaviyoStream(RESTStream):
 
     records_jsonpath = "$.data[*]"
     next_page_token_jsonpath = "$.links.next"
+    parallelization_limit = 5
+    min_paging_window_hours = 6
 
     @property
     def authenticator(self):
@@ -84,6 +87,33 @@ class KlaviyoStream(RESTStream):
         rep_key = self.get_starting_timestamp(context)
         return rep_key or start_date
 
+    def get_paging_windows(self, context):
+        if not self.replication_key or self.parallelization_limit <= 1:
+            return []
+        start = self.get_starting_time(context)
+        if not start:
+            return []
+        start = pendulum.instance(start).in_timezone("UTC")
+        end = pendulum.now("UTC")
+        if self.config.get("end_date"):
+            end = parse(self.config.get("end_date")).in_timezone("UTC")
+        if start >= end:
+            return []
+        total_seconds = (end - start).total_seconds()
+        min_window_seconds = self.min_paging_window_hours * 3600
+        window_count = min(
+            self.parallelization_limit,
+            max(1, int(total_seconds // min_window_seconds)),
+        )
+        step = total_seconds / window_count
+        return [
+            {
+                "window_start": start if i == 0 else start.add(seconds=step * i),
+                "window_end": end if i == window_count - 1 else start.add(seconds=step * (i + 1)),
+            }
+            for i in range(window_count)
+        ]
+
     def get_url_params(
         self, context: Optional[dict], next_page_token: Optional[Any]
     ) -> Dict[str, Any]:
@@ -91,16 +121,23 @@ class KlaviyoStream(RESTStream):
         params: dict = {}
         if next_page_token:
             params["page[cursor]"] = next_page_token
-        start_date = self.get_starting_time(context)
-        if self.replication_key and start_date:
-            start_date = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-            if self.config.get("end_date"):
-                end_date = self.config.get("end_date")
-                end_date = parse(self.config.get("end_date"))
-                end_date = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-                params["filter"] = f"and(greater-than({self.replication_key},{start_date}),less-or-equal({self.replication_key},{end_date}))"
-            else:
-                params["filter"] = f"greater-than({self.replication_key},{start_date})"
+        if context and "window_start" in context and "window_end" in context:
+            ws = context["window_start"].strftime("%Y-%m-%dT%H:%M:%SZ")
+            we = context["window_end"].strftime("%Y-%m-%dT%H:%M:%SZ")
+            params["filter"] = (
+                f"and(greater-than({self.replication_key},{ws}),"
+                f"less-than({self.replication_key},{we}))"
+            )
+        else:
+            start_date = self.get_starting_time(context)
+            if self.replication_key and start_date:
+                start_date = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+                if self.config.get("end_date"):
+                    end_date = parse(self.config.get("end_date"))
+                    end_date = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    params["filter"] = f"and(greater-than({self.replication_key},{start_date}),less-or-equal({self.replication_key},{end_date}))"
+                else:
+                    params["filter"] = f"greater-than({self.replication_key},{start_date})"
 
         return params
 
