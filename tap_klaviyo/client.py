@@ -88,23 +88,32 @@ class KlaviyoStream(RESTStream):
         return rep_key or start_date
 
     def get_paging_windows(self, context):
+        """
+        Returns windows of independent time periods that can be synced in parallel.
+        """
+
         if not self.replication_key or self.parallelization_limit <= 1:
             return []
         start = self.get_starting_time(context)
         if not start:
             return []
+
         start = pendulum.instance(start).in_timezone("UTC")
         end = pendulum.now("UTC")
+
         if self.config.get("end_date"):
             end = parse(self.config.get("end_date")).in_timezone("UTC")
+
         if start >= end:
             return []
+
         total_seconds = (end - start).total_seconds()
         min_window_seconds = self.min_paging_window_hours * 3600
         window_count = min(
             self.parallelization_limit,
             max(1, int(total_seconds // min_window_seconds)),
         )
+
         step = total_seconds / window_count
         return [
             {
