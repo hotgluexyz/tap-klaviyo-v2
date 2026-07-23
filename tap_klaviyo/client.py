@@ -51,7 +51,7 @@ class KlaviyoStream(RESTStream):
     def http_headers(self) -> dict:
         """Return the http headers needed."""
         headers = {}
-        headers["revision"] = "2024-10-15"
+        headers["revision"] = "2026-07-15"
         if "user_agent" in self.config:
             headers["User-Agent"] = self.config.get("user_agent")
         return headers
