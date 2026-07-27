@@ -123,7 +123,7 @@ class CampaignsStream(KlaviyoStream):
     path = "/campaigns"
     primary_keys = ["id"]
     replication_key = "updated_at"
-    channels = ("email", "sms")
+    channels = ("email", "sms", "mobile_push")
 
     @property
     def state_partitioning_keys(self) -> Optional[List[str]]:
@@ -188,7 +188,34 @@ class CampaignsStream(KlaviyoStream):
         row = super().post_process(row, context)
         if context and context.get("channel"):
             row["channel"] = context["channel"]
+        row["send_strategy"] = self._normalize_send_strategy(row.get("send_strategy"))
         return row
+
+    @staticmethod
+    def _normalize_send_strategy(send_strategy):
+        if not isinstance(send_strategy, dict):
+            return send_strategy
+        # Already the legacy shape (nothing to do).
+        if any(k in send_strategy for k in ("options_static", "options_throttled", "options_sto")):
+            return send_strategy
+
+        legacy = {"options_static": None, "options_throttled": None, "options_sto": None}
+        if send_strategy.get("throttle_percentage") is not None:
+            legacy["options_throttled"] = {
+                "datetime": send_strategy.get("datetime"),
+                "throttle_percentage": send_strategy.get("throttle_percentage"),
+            }
+        elif send_strategy.get("date") is not None:
+            legacy["options_sto"] = {"date": send_strategy.get("date")}
+        elif send_strategy.get("datetime") is not None or send_strategy.get("options") is not None:
+            options = send_strategy.get("options") or {}
+            legacy["options_static"] = {
+                "datetime": send_strategy.get("datetime"),
+                "is_local": options.get("is_local"),
+                "send_past_recipients_immediately": options.get("send_past_recipients_immediately"),
+            }
+        # method == "immediate" (or unknown) -> all three legacy keys stay None.
+        return {**send_strategy, **legacy}
 
 
 class CampaignMessagesStream(KlaviyoStream):
@@ -226,8 +253,18 @@ class CampaignMessagesStream(KlaviyoStream):
         schema["properties"].update(th.Property("template_id", th.StringType).to_dict())
         return schema
 
+    _DEFINITION_KEYS = (
+        "channel", "label", "content", "render_options",
+        "notification_type", "options", "kv_pairs",
+    )
+
     def post_process(self, row, context):
         row = super().post_process(row, context)
+        definition = row.pop("definition", None)
+        if isinstance(definition, dict):
+            for key in self._DEFINITION_KEYS:
+                if key in definition:
+                    row.setdefault(key, definition[key])
         if context and context.get("id"):
             row["campaign_id"] = context["id"]
         template = (row.get("relationships") or {}).get("template", {}).get("data")

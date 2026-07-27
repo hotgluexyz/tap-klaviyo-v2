@@ -267,6 +267,49 @@
             "null"
           ]
         },
+        "datetime": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "Revision 2025-01-15 send_strategy: scheduled send time (static/throttled)"
+        },
+        "date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Revision 2025-01-15 send_strategy: smart send time date"
+        },
+        "throttle_percentage": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Revision 2025-01-15 send_strategy: throttled percentage"
+        },
+        "options": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Revision 2025-01-15 send_strategy: static-method options",
+          "properties": {
+            "is_local": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "send_past_recipients_immediately": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        },
         "options_static": {
           "type": [
             "object",

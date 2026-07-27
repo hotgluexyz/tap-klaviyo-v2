@@ -15,19 +15,34 @@
             "type": "object",
             "properties": {
                 "email": {
-                    "type": "string",
-                    "description": "The email of the author of this review"
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "The email of the author of this review (nullable as of revision 2025-01-15)"
                 },
                 "status": {
-                    "type": "string",
-                    "enum": [
-                        "featured",
-                        "pending",
-                        "published",
-                        "rejected",
-                        "unpublished"
+                    "type": [
+                        "object",
+                        "string",
+                        "null"
                     ],
-                    "description": "The status of this review"
+                    "description": "Status of this review. As of revision 2025-01-15 this is an object (e.g. {\"value\": \"rejected\", \"rejection_reason\": ...}); typed to also tolerate the pre-2025-01-15 string. NOTE: not verified live (token lacked reviews:read); reviews records are flattened in post_process so the emitted top-level status is actually typed by discovery.",
+                    "properties": {
+                        "value": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "rejection_reason": {
+                            "type": [
+                                "object",
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
                 },
                 "verified": {
                     "type": "boolean",

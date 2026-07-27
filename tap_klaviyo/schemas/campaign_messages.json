@@ -115,6 +115,55 @@
               }
             }
           }
+        },
+        "image": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Image relationship added in revision 2025-01-15",
+          "properties": {
+            "data": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "type": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            },
+            "links": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "self": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "related": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -264,6 +313,27 @@
           ]
         }
       }
+    },
+    "notification_type": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "mobile_push message type; from the revision 2025-01-15 definition object"
+    },
+    "options": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "mobile_push send options; from the revision 2025-01-15 definition object"
+    },
+    "kv_pairs": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "mobile_push key/value pairs; from the revision 2025-01-15 definition object"
     },
     "created_at": {
       "type": [
