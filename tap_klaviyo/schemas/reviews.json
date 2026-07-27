@@ -11,6 +11,38 @@
             "type": "string",
             "description": "The ID of the review"
         },
+        "status": {
+            "type": [
+                "object",
+                "string",
+                "null"
+            ],
+            "description": "The status of this review. An object since revision 2025-01-15 (e.g. {\"value\": \"rejected\", \"rejection_reason\": {...}}); also accepts the plain string used before that revision.",
+            "properties": {
+                "value": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "featured, pending, published, rejected or unpublished"
+                },
+                "rejection_reason": {
+                    "type": [
+                        "object",
+                        "string",
+                        "null"
+                    ],
+                    "description": "Why the review was rejected, when applicable"
+                }
+            }
+        },
+        "email": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "description": "The email of the author of this review. Nullable since revision 2025-01-15."
+        },
         "attributes": {
             "type": "object",
             "properties": {
@@ -27,7 +59,7 @@
                         "string",
                         "null"
                     ],
-                    "description": "Status of this review. As of revision 2025-01-15 this is an object (e.g. {\"value\": \"rejected\", \"rejection_reason\": ...}); typed to also tolerate the pre-2025-01-15 string. NOTE: not verified live (token lacked reviews:read); reviews records are flattened in post_process so the emitted top-level status is actually typed by discovery.",
+                    "description": "The status of this review. An object since revision 2025-01-15; also accepts the pre-2025-01-15 string.",
                     "properties": {
                         "value": {
                             "type": [

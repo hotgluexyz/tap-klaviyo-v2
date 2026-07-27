@@ -42,7 +42,7 @@
                         }
                     }
                 },
-                "conversations": {
+                "conversation": {
                     "type": ["object", "null"],
                     "properties": {
                         "links": {
