@@ -251,6 +251,7 @@ class CampaignMessagesStream(KlaviyoStream):
         schema.setdefault("properties", {})
         schema["properties"].update(th.Property("campaign_id", th.StringType).to_dict())
         schema["properties"].update(th.Property("template_id", th.StringType).to_dict())
+        schema["properties"].pop("definition", None)
         return schema
 
     _DEFINITION_KEYS = (
