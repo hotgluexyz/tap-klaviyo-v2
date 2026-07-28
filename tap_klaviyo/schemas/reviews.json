@@ -17,7 +17,7 @@
                 "string",
                 "null"
             ],
-            "description": "The status of this review. An object since revision 2025-01-15 (e.g. {\"value\": \"rejected\", \"rejection_reason\": {...}}); also accepts the plain string used before that revision.",
+            "description": "The status of this review",
             "properties": {
                 "value": {
                     "type": [
@@ -41,7 +41,7 @@
                 "string",
                 "null"
             ],
-            "description": "The email of the author of this review. Nullable since revision 2025-01-15."
+            "description": "The email of the author of this review"
         },
         "attributes": {
             "type": "object",
@@ -59,7 +59,7 @@
                         "string",
                         "null"
                     ],
-                    "description": "The status of this review. An object since revision 2025-01-15; also accepts the pre-2025-01-15 string.",
+                    "description": "The status of this review",
                     "properties": {
                         "value": {
                             "type": [
