@@ -63,6 +63,42 @@ This tap:
    tap-klaviyo --config config.json [--state state.json] [--catalog catalog.json]
    ```
 
+## Klaviyo revision changes
+
+The tap pins Klaviyo's API revision in `KlaviyoStream.http_headers` (currently `2026-07-15`).
+Klaviyo reshaped several objects between revisions, so bumping that header is not enough on
+its own. One question decides how each reshaped object is handled:
+
+> **Does the new shape carry information the legacy shape cannot express?**
+
+**No — pure repackaging.** The record is emitted in the **legacy shape only**, so existing
+downstream columns keep working. The new keys are *not* emitted alongside them: they hold
+identical values, and keeping both would store the same data twice. Where discovery infers
+the new keys from a live response, `get_schema` drops them so the catalog cannot advertise
+columns that `post_process` always removes.
+
+| Stream | Change | Handling |
+|---|---|---|
+| `campaign_messages` | attributes moved under a per-channel `definition` wrapper (2025-01-15) | wrapper unpacked back to `channel`/`label`/`content`/`render_options`, then dropped |
+| `campaigns` | `send_strategy` flattened (2025-01-15) | rewritten back to `options_static`/`options_throttled`/`options_sto` |
+
+**Yes — normalizing would lose data.** The new shape is passed through as-is, and the change
+is a breaking one for downstream consumers.
+
+| Stream | Change | Why not normalized |
+|---|---|---|
+| `contacts` | `conversation` → `conversations` (2026-07-15) | now multi-channel (one entry per channel); collapsing to a single key drops channels, and the singular relationship no longer exists on `/profiles` |
+| `reviews` | `status` string → object (2025-01-15) | gained `rejection_reason` alongside `value`; flattening back to a string discards it |
+
+Fields that are genuinely new and have no legacy counterpart — mobile_push's
+`notification_type`/`options`/`kv_pairs`, the campaign-message `image` relationship — are
+additive and passed through as-is; nothing existing can break.
+
+Two related notes: records are flattened (`attributes` is lifted to the top level in
+`post_process`), so static schemas must declare fields at the **top level**, not nested under
+`attributes`; and `campaigns` requires a `messages.channel` filter, so a channel is only
+synced if it is listed in `CampaignsStream.channels`.
+
 ## Report Streams
 
 The tap now includes report-style streams that provide aggregated metrics using Klaviyo's Query Metric Aggregates API. These streams offer pre-built reports for common analytics needs while allowing customization through configuration.

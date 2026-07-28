@@ -17,7 +17,7 @@
                 "string",
                 "null"
             ],
-            "description": "The status of this review",
+            "description": "Status of this review. Object since revision 2025-01-15; string before.",
             "properties": {
                 "value": {
                     "type": [
@@ -32,7 +32,7 @@
                         "string",
                         "null"
                     ],
-                    "description": "Why the review was rejected, when applicable"
+                    "description": "Set when the review was rejected"
                 }
             }
         },
@@ -41,160 +41,117 @@
                 "string",
                 "null"
             ],
-            "description": "The email of the author of this review"
+            "description": "Email of the review author. Nullable since revision 2025-01-15."
         },
-        "attributes": {
-            "type": "object",
+        "verified": {
+            "type": "boolean",
+            "description": "The verification status of this review (aka whether or not we have confirmation that the customer bought the product)"
+        },
+        "review_type": {
+            "type": "string",
+            "enum": [
+                "review",
+                "question",
+                "rating"
+            ],
+            "description": "The type of this review"
+        },
+        "created": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The datetime when this review was created"
+        },
+        "updated": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The datetime when this review was updated"
+        },
+        "images": {
+            "type": "array",
+            "items": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "description": "The list of images submitted with this review (represented as a list of urls). If there are no images, this field will be an empty list."
+        },
+        "product": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "description": "The product associated with this review",
             "properties": {
-                "email": {
-                    "type": [
-                        "string",
-                        "null"
-                    ],
-                    "description": "The email of the author of this review (nullable as of revision 2025-01-15)"
-                },
-                "status": {
-                    "type": [
-                        "object",
-                        "string",
-                        "null"
-                    ],
-                    "description": "The status of this review",
-                    "properties": {
-                        "value": {
-                            "type": [
-                                "string",
-                                "null"
-                            ]
-                        },
-                        "rejection_reason": {
-                            "type": [
-                                "object",
-                                "string",
-                                "null"
-                            ]
-                        }
-                    }
-                },
-                "verified": {
-                    "type": "boolean",
-                    "description": "The verification status of this review (aka whether or not we have confirmation that the customer bought the product)"
-                },
-                "review_type": {
+                "url": {
                     "type": "string",
-                    "enum": [
-                        "review",
-                        "question",
-                        "rating"
-                    ],
-                    "description": "The type of this review"
+                    "description": "The URL of the product"
                 },
-                "created": {
+                "name": {
                     "type": "string",
-                    "format": "date-time",
-                    "description": "The datetime when this review was created"
+                    "description": "The name of the product"
+                },
+                "image_url": {
+                    "type": "string",
+                    "description": "The URL of the product image"
+                }
+            }
+        },
+        "rating": {
+            "type": [
+                "integer",
+                "null"
+            ],
+            "description": "The rating of this review on a scale from 1-5"
+        },
+        "author": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "description": "The author of this review"
+        },
+        "content": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "description": "The content of this review"
+        },
+        "title": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "description": "The title of this review"
+        },
+        "smart_quote": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "description": "A quote from this review that summarizes the content"
+        },
+        "public_reply": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "description": "The content of the public reply"
+                },
+                "author": {
+                    "type": "string",
+                    "description": "The author of the public reply"
                 },
                 "updated": {
                     "type": "string",
                     "format": "date-time",
-                    "description": "The datetime when this review was updated"
-                },
-                "images": {
-                    "type": "array",
-                    "items": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "description": "The list of images submitted with this review (represented as a list of urls). If there are no images, this field will be an empty list."
-                },
-                "product": {
-                    "type": [
-                        "object",
-                        "null"
-                    ],
-                    "description": "The product associated with this review",
-                    "properties": {
-                        "url": {
-                            "type": "string",
-                            "description": "The URL of the product"
-                        },
-                        "name": {
-                            "type": "string",
-                            "description": "The name of the product"
-                        },
-                        "image_url": {
-                            "type": "string",
-                            "description": "The URL of the product image"
-                        }
-                    }
-                },
-                "rating": {
-                    "type": [
-                        "integer",
-                        "null"
-                    ],
-                    "description": "The rating of this review on a scale from 1-5"
-                },
-                "author": {
-                    "type": [
-                        "string",
-                        "null"
-                    ],
-                    "description": "The author of this review"
-                },
-                "content": {
-                    "type": [
-                        "string",
-                        "null"
-                    ],
-                    "description": "The content of this review"
-                },
-                "title": {
-                    "type": [
-                        "string",
-                        "null"
-                    ],
-                    "description": "The title of this review"
-                },
-                "smart_quote": {
-                    "type": [
-                        "string",
-                        "null"
-                    ],
-                    "description": "A quote from this review that summarizes the content"
-                },
-                "public_reply": {
-                    "type": [
-                        "object",
-                        "null"
-                    ],
-                    "properties": {
-                        "content": {
-                            "type": "string",
-                            "description": "The content of the public reply"
-                        },
-                        "author": {
-                            "type": "string",
-                            "description": "The author of the public reply"
-                        },
-                        "updated": {
-                            "type": "string",
-                            "format": "date-time",
-                            "description": "The datetime when this public reply was updated"
-                        }
-                    }
+                    "description": "The datetime when this public reply was updated"
                 }
-            },
-            "required": [
-                "email",
-                "verified",
-                "review_type",
-                "created",
-                "updated",
-                "images"
-            ]
+            }
         },
         "links": {
             "type": "object",
@@ -297,7 +254,6 @@
     "required": [
         "type",
         "id",
-        "attributes",
         "links"
     ]
 }

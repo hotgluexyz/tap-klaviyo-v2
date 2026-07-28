@@ -121,7 +121,7 @@
             "object",
             "null"
           ],
-          "description": "Image relationship added in revision 2025-01-15",
+          "description": "Added in revision 2025-01-15",
           "properties": {
             "data": {
               "type": [
@@ -261,21 +261,21 @@
             "string",
             "null"
           ],
-          "description": "mobile_push: the title of the message"
+          "description": "mobile_push only"
         },
         "dynamic_image": {
           "type": [
             "string",
             "null"
           ],
-          "description": "mobile_push: the dynamic image used in the push notification"
+          "description": "mobile_push only"
         },
         "action_buttons": {
           "type": [
             "array",
             "null"
           ],
-          "description": "mobile_push: action buttons for the push notification",
+          "description": "mobile_push only",
           "items": {
             "type": [
               "object",
@@ -373,21 +373,21 @@
         "string",
         "null"
       ],
-      "description": "mobile_push message type; from the revision 2025-01-15 definition object"
+      "description": "mobile_push only; from the `definition` object"
     },
     "options": {
       "type": [
         "object",
         "null"
       ],
-      "description": "mobile_push send options; from the revision 2025-01-15 definition object"
+      "description": "mobile_push only; from the `definition` object"
     },
     "kv_pairs": {
       "type": [
         "object",
         "null"
       ],
-      "description": "mobile_push key/value pairs; from the revision 2025-01-15 definition object"
+      "description": "mobile_push only; from the `definition` object"
     },
     "created_at": {
       "type": [
