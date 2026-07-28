@@ -255,6 +255,60 @@
             "string",
             "null"
           ]
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "mobile_push: the title of the message"
+        },
+        "dynamic_image": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "mobile_push: the dynamic image used in the push notification"
+        },
+        "action_buttons": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "mobile_push: action buttons for the push notification",
+          "items": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "label": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "action_type": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "open_app, deep_link, open_url or dismiss"
+              },
+              "position": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "url": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
         }
       }
     },
