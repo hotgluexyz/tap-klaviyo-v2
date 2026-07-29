@@ -63,12 +63,10 @@ This tap:
    tap-klaviyo --config config.json [--state state.json] [--catalog catalog.json]
    ```
 
-## API revision 2026-07-15: breaking changes
+## API revision bump to 2026-07-15: breaking changes
 
 The tap requests revision `2026-07-15` (set in `KlaviyoStream.http_headers`). Klaviyo
-changed the shape of several objects between `2024-10-15` and this revision. The tap
-passes those changes through as-is rather than rewriting them, so the fields below have
-moved or changed type and anything reading them downstream needs updating.
+changed the shape of several objects between `2024-10-15` and this revision. The tap doesn't reshape the data — it passes it through as-is. That means the fields below have moved or changed type, so anything consuming them downstream needs to catch up.
 
 Four streams are affected. `events`, `metrics`, `lists`, `list_members`, `templates` and
 all report streams are unchanged.
@@ -128,7 +126,7 @@ After:
 
 The related URLs change too. `/profiles/{id}/conversations` returns a list with one entry
 per channel (SMS, WhatsApp, Instagram), which is why it cannot be represented as the single
-object the old field held.
+object the old field had.
 
 Note this only changed on `/profiles`. `/lists/{id}/profiles` still returns the singular
 `conversation`, so `list_members` is unchanged and its schema differs from `contacts` on
@@ -148,16 +146,6 @@ After:
 
 The object also carries `rejection_reason` when a review has been rejected. `email` is now
 nullable. Verified against a live account: all 110 reviews changed shape.
-
-### Notes for future revision bumps
-
-Records are flattened before they are emitted (`post_process` lifts `attributes` to the top
-level), so static schemas in `tap_klaviyo/schemas/` must declare fields at the top level,
-not nested under `attributes`.
-
-Schemas are also merged with what discovery infers from a live response, and discovery keeps
-any field the static file does not mention. If a field should not appear in the catalog,
-removing it from the static schema is not enough.
 
 ## Report Streams
 
