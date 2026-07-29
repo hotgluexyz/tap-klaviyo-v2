@@ -114,19 +114,80 @@ Existing email and SMS sync positions are kept, and push backfills once on the f
 
 ### contacts
 
-The profile conversation relationship became plural and multi-channel.
+The profile conversation relationship became plural and multi-channel. The field is renamed
+from `conversation` to `conversations`, and the URLs inside it change to match.
 
 Before:
 
-    "relationships": {"conversation": {"links": {...}}}
+    "relationships": {
+      "conversation": {
+        "links": {
+          "self": ".../api/profiles/{id}/relationships/conversation/",
+          "related": ".../api/profiles/{id}/conversation/"
+        }
+      }
+    }
 
 After:
 
-    "relationships": {"conversations": {"links": {...}}}
+    "relationships": {
+      "conversations": {
+        "links": {
+          "self": ".../api/profiles/{id}/relationships/conversations/",
+          "related": ".../api/profiles/{id}/conversations/"
+        }
+      }
+    }
 
-The related URLs change too. `/profiles/{id}/conversations` returns a list with one entry
-per channel (SMS, WhatsApp, Instagram), which is why it cannot be represented as the single
-object the old field had.
+Three things change: the field name, and both URLs under `links`.
+
+Following the related URL returns something different in kind. The plural endpoint returns
+`data` as a list, with one entry per channel, each carrying its own `channel` attribute:
+
+    {
+      "data": [
+        {
+          "type": "conversation",
+          "id": "conv_instagram_1",
+          "attributes": { "channel": "instagram" },
+          "relationships": { "profile": { ... } },
+          "links": { "self": "string" }
+        },
+        {
+          "type": "conversation",
+          "id": "conv_whatsapp_2",
+          "attributes": { "channel": "whatsapp" },
+          "relationships": { "profile": { ... } },
+          "links": { "self": "string" }
+        }
+      ],
+      "links": { "self": "string", "prev": "string", "next": "string" }
+    }
+
+One profile, two conversations. Note the `data` array and the two different `channel`
+values.
+
+The singular endpoint still responds on this revision, but returns `data` as a single
+object, so it can only ever represent one channel:
+
+    {
+      "data": {
+        "type": "conversation",
+        "id": "conv_instagram_1",
+        "attributes": { "channel": "instagram" },
+        "relationships": { "profile": { ... } },
+        "links": { "self": "string" }
+      },
+      "links": { "self": "string" }
+    }
+
+Same profile, but `data` is a single object. There is nowhere for the WhatsApp conversation
+to go, so it is simply not returned.
+
+A list against a single object is why the new field cannot be mapped back to the old one.
+A profile with conversations on two channels has two entries, and collapsing them into the
+singular key would drop one. The plural response is also paginated (`prev`/`next` links),
+which the singular one is not.
 
 Note this only changed on `/profiles`. `/lists/{id}/profiles` still returns the singular
 `conversation`, so `list_members` is unchanged and its schema differs from `contacts` on
