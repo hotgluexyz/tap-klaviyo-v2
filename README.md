@@ -63,41 +63,101 @@ This tap:
    tap-klaviyo --config config.json [--state state.json] [--catalog catalog.json]
    ```
 
-## Klaviyo revision changes
+## API revision 2026-07-15: breaking changes
 
-The tap pins Klaviyo's API revision in `KlaviyoStream.http_headers` (currently `2026-07-15`).
-Klaviyo reshaped several objects between revisions, so bumping that header is not enough on
-its own. One question decides how each reshaped object is handled:
+The tap requests revision `2026-07-15` (set in `KlaviyoStream.http_headers`). Klaviyo
+changed the shape of several objects between `2024-10-15` and this revision. The tap
+passes those changes through as-is rather than rewriting them, so the fields below have
+moved or changed type and anything reading them downstream needs updating.
 
-> **Does the new shape carry information the legacy shape cannot express?**
+Four streams are affected. `events`, `metrics`, `lists`, `list_members`, `templates` and
+all report streams are unchanged.
 
-**No — pure repackaging.** The record is emitted in the **legacy shape only**, so existing
-downstream columns keep working. The new keys are *not* emitted alongside them: they hold
-identical values, and keeping both would store the same data twice. Where discovery infers
-the new keys from a live response, `get_schema` drops them so the catalog cannot advertise
-columns that `post_process` always removes.
+### campaign_messages
 
-| Stream | Change | Handling |
-|---|---|---|
-| `campaign_messages` | attributes moved under a per-channel `definition` wrapper (2025-01-15) | wrapper unpacked back to `channel`/`label`/`content`/`render_options`, then dropped |
-| `campaigns` | `send_strategy` flattened (2025-01-15) | rewritten back to `options_static`/`options_throttled`/`options_sto` |
+Message content moved into a `definition` object.
 
-**Yes — normalizing would lose data.** The new shape is passed through as-is, and the change
-is a breaking one for downstream consumers.
+Before:
 
-| Stream | Change | Why not normalized |
-|---|---|---|
-| `contacts` | `conversation` → `conversations` (2026-07-15) | now multi-channel (one entry per channel); collapsing to a single key drops channels, and the singular relationship no longer exists on `/profiles` |
-| `reviews` | `status` string → object (2025-01-15) | gained `rejection_reason` alongside `value`; flattening back to a string discards it |
+    {"channel": "email", "label": "Email 1", "content": {"subject": "Testing"}}
 
-Fields that are genuinely new and have no legacy counterpart — mobile_push's
-`notification_type`/`options`/`kv_pairs`, the campaign-message `image` relationship — are
-additive and passed through as-is; nothing existing can break.
+After:
 
-Two related notes: records are flattened (`attributes` is lifted to the top level in
-`post_process`), so static schemas must declare fields at the **top level**, not nested under
-`attributes`; and `campaigns` requires a `messages.channel` filter, so a channel is only
-synced if it is listed in `CampaignsStream.channels`.
+    {"definition": {"channel": "email", "label": "Email 1", "content": {"subject": "Testing"}}}
+
+`channel`, `label`, `content` and `render_options` are no longer top-level fields. They are
+now under `definition`, along with `notification_type`, `options` and `kv_pairs` for push
+messages. Which keys are present depends on the channel: `label` is email only, and
+`render_options` is SMS only.
+
+`campaign_id` and `template_id` are added by the tap and stay at the top level.
+
+### campaigns
+
+`send_strategy` was flattened, and the fields it contains now depend on `method`.
+
+Before:
+
+    {"method": "static", "options_static": {"datetime": "...", "is_local": true},
+     "options_throttled": null, "options_sto": null}
+
+After:
+
+    {"method": "static", "datetime": "...", "options": {"is_local": true}}
+
+`options_static`, `options_throttled` and `options_sto` are gone. Depending on the method
+you now get `datetime` and `options` (static), `datetime` and `throttle_percentage`
+(throttled), `date` (smart send time), or `method` on its own (immediate, A/B test,
+unsupported).
+
+Push campaigns are also synced now. `CampaignsStream.channels` covers email, SMS and
+mobile_push; the endpoint requires a channel filter, so only listed channels are pulled.
+Existing email and SMS sync positions are kept, and push backfills once on the first run.
+
+### contacts
+
+The profile conversation relationship became plural and multi-channel.
+
+Before:
+
+    "relationships": {"conversation": {"links": {...}}}
+
+After:
+
+    "relationships": {"conversations": {"links": {...}}}
+
+The related URLs change too. `/profiles/{id}/conversations` returns a list with one entry
+per channel (SMS, WhatsApp, Instagram), which is why it cannot be represented as the single
+object the old field held.
+
+Note this only changed on `/profiles`. `/lists/{id}/profiles` still returns the singular
+`conversation`, so `list_members` is unchanged and its schema differs from `contacts` on
+purpose.
+
+### reviews
+
+`status` changed from a string to an object.
+
+Before:
+
+    "status": "published"
+
+After:
+
+    "status": {"value": "published"}
+
+The object also carries `rejection_reason` when a review has been rejected. `email` is now
+nullable. Verified against a live account: all 110 reviews changed shape.
+
+### Notes for future revision bumps
+
+Records are flattened before they are emitted (`post_process` lifts `attributes` to the top
+level), so static schemas in `tap_klaviyo/schemas/` must declare fields at the top level,
+not nested under `attributes`.
+
+Schemas are also merged with what discovery infers from a live response, and discovery keeps
+any field the static file does not mention. If a field should not appear in the catalog,
+removing it from the static schema is not enough.
 
 ## Report Streams
 

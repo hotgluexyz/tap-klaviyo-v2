@@ -172,21 +172,10 @@ class CampaignsStream(KlaviyoStream):
         url = f"{url}?{urlencode(params)}"
         return super().get_data(method, url, headers)
 
-    # Rewritten to the legacy shape in post_process, so no record carries them.
-    _NEW_SEND_STRATEGY_KEYS = ("datetime", "date", "throttle_percentage", "options")
-
     def get_schema(self) -> dict:
         schema = super().get_schema()
         schema.setdefault("properties", {})
         schema["properties"].update(th.Property("channel", th.StringType).to_dict())
-        # Discovery infers these from the live API; drop them or the catalog
-        # advertises columns post_process always removes.
-        send_strategy_props = (
-            schema["properties"].get("send_strategy", {}).get("properties")
-        )
-        if isinstance(send_strategy_props, dict):
-            for key in self._NEW_SEND_STRATEGY_KEYS:
-                send_strategy_props.pop(key, None)
         return schema
 
     def get_child_context(self, record, context):
@@ -199,45 +188,7 @@ class CampaignsStream(KlaviyoStream):
         row = super().post_process(row, context)
         if context and context.get("channel"):
             row["channel"] = context["channel"]
-        # Guarded so a missing value stays missing rather than becoming null.
-        if isinstance(row.get("send_strategy"), dict):
-            row["send_strategy"] = self._normalize_send_strategy(row["send_strategy"])
         return row
-
-    @staticmethod
-    def _normalize_send_strategy(send_strategy: dict) -> dict:
-        """Rewrite the 2025-01-15 send_strategy back to the pre-revision shape.
-
-        Legacy shape only - the new keys hold identical values, so emitting both
-        would store the same data twice. Method is inferred from field presence.
-        See README "Klaviyo revision changes".
-        """
-        # Already the legacy shape (nothing to do).
-        if any(k in send_strategy for k in ("options_static", "options_throttled", "options_sto")):
-            return send_strategy
-
-        legacy = {
-            "method": send_strategy.get("method"),
-            "options_static": None,
-            "options_throttled": None,
-            "options_sto": None,
-        }
-        if send_strategy.get("throttle_percentage") is not None:
-            legacy["options_throttled"] = {
-                "datetime": send_strategy.get("datetime"),
-                "throttle_percentage": send_strategy.get("throttle_percentage"),
-            }
-        elif send_strategy.get("date") is not None:
-            legacy["options_sto"] = {"date": send_strategy.get("date")}
-        elif send_strategy.get("datetime") is not None or send_strategy.get("options") is not None:
-            options = send_strategy.get("options") or {}
-            legacy["options_static"] = {
-                "datetime": send_strategy.get("datetime"),
-                "is_local": options.get("is_local"),
-                "send_past_recipients_immediately": options.get("send_past_recipients_immediately"),
-            }
-        # method == "immediate" (or unknown) -> all three legacy keys stay None.
-        return legacy
 
 
 class CampaignMessagesStream(KlaviyoStream):
@@ -273,24 +224,10 @@ class CampaignMessagesStream(KlaviyoStream):
         schema.setdefault("properties", {})
         schema["properties"].update(th.Property("campaign_id", th.StringType).to_dict())
         schema["properties"].update(th.Property("template_id", th.StringType).to_dict())
-        # Unpacked in post_process, so no record carries it.
-        schema["properties"].pop("definition", None)
         return schema
-
-    # Keys the 2025-01-15 `definition` wrapper can carry, across all channels.
-    _DEFINITION_KEYS = (
-        "channel", "label", "content", "render_options",
-        "notification_type", "options", "kv_pairs",
-    )
 
     def post_process(self, row, context):
         row = super().post_process(row, context)
-        # 2025-01-15 moved these under `definition`; lift them back to the top level.
-        definition = row.pop("definition", None)
-        if isinstance(definition, dict):
-            for key in self._DEFINITION_KEYS:
-                if key in definition:
-                    row.setdefault(key, definition[key])
         if context and context.get("id"):
             row["campaign_id"] = context["id"]
         template = (row.get("relationships") or {}).get("template", {}).get("data")
