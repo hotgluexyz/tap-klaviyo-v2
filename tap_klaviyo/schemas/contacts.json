@@ -104,7 +104,7 @@
             }
           }
         },
-        "conversation": {
+        "conversations": {
           "type": [
             "object",
             "null"

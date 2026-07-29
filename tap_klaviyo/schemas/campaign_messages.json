@@ -14,6 +14,265 @@
       ],
       "description": "The ID of the campaign message"
     },
+    "definition": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Message definition. Keys present depend on the channel.",
+      "properties": {
+        "channel": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "email, sms or mobile_push"
+        },
+        "label": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "email only"
+        },
+        "content": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Content of the message. Keys differ per channel.",
+          "properties": {
+            "subject": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "preview_text": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "from_email": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "from_label": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "reply_to_email": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "cc_email": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "bcc_email": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "body": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "media_url": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "title": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "mobile_push only"
+            },
+            "dynamic_image": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "mobile_push only"
+            },
+            "action_buttons": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "description": "mobile_push only",
+              "items": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "label": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "action_type": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "open_app, deep_link, open_url or dismiss"
+                  },
+                  "position": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "url": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "render_options": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "shorten_links": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "add_org_prefix": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "add_info_link": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "add_opt_out_language": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        },
+        "notification_type": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "mobile_push only"
+        },
+        "options": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "mobile_push only"
+        },
+        "kv_pairs": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "mobile_push only"
+        }
+      }
+    },
+    "send_times": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "datetime": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "is_local": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "created_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "campaign_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Parent campaign id (added in post_process)"
+    },
+    "template_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Associated template id (added in post_process)"
+    },
+    "links": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "self": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
     "relationships": {
       "type": [
         "object",
@@ -115,183 +374,57 @@
               }
             }
           }
-        }
-      }
-    },
-    "links": {
-      "type": [
-        "object",
-        "null"
-      ],
-      "properties": {
-        "self": {
-          "type": [
-            "string",
-            "null"
-          ]
-        }
-      }
-    },
-    "label": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "description": "The label/name of the message"
-    },
-    "channel": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "description": "The channel the message is sent through (e.g. email, sms)"
-    },
-    "content": {
-      "type": [
-        "object",
-        "null"
-      ],
-      "description": "Channel-specific content. Email and SMS messages expose different keys.",
-      "properties": {
-        "subject": {
-          "type": [
-            "string",
-            "null"
-          ]
         },
-        "preview_text": {
+        "image": {
           "type": [
-            "string",
+            "object",
             "null"
-          ]
-        },
-        "from_email": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "from_label": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "reply_to_email": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "cc_email": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "bcc_email": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "body": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "media_url": {
-          "type": [
-            "string",
-            "null"
-          ]
-        }
-      }
-    },
-    "send_times": {
-      "type": [
-        "array",
-        "null"
-      ],
-      "items": {
-        "type": "object",
-        "properties": {
-          "datetime": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time"
-          },
-          "is_local": {
-            "type": [
-              "boolean",
-              "null"
-            ]
+          ],
+          "description": "Added in revision 2025-01-15",
+          "properties": {
+            "data": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "type": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            },
+            "links": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "self": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "related": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
           }
         }
       }
-    },
-    "render_options": {
-      "type": [
-        "object",
-        "null"
-      ],
-      "properties": {
-        "shorten_links": {
-          "type": [
-            "boolean",
-            "null"
-          ]
-        },
-        "add_org_prefix": {
-          "type": [
-            "boolean",
-            "null"
-          ]
-        },
-        "add_info_link": {
-          "type": [
-            "boolean",
-            "null"
-          ]
-        },
-        "add_opt_out_language": {
-          "type": [
-            "boolean",
-            "null"
-          ]
-        }
-      }
-    },
-    "created_at": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "format": "date-time"
-    },
-    "updated_at": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "format": "date-time"
-    },
-    "campaign_id": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "description": "Parent campaign id (added in post_process)"
-    },
-    "template_id": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "description": "Associated template id (added in post_process)"
     }
   },
   "required": [

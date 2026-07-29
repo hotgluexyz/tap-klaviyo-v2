@@ -123,7 +123,7 @@ class CampaignsStream(KlaviyoStream):
     path = "/campaigns"
     primary_keys = ["id"]
     replication_key = "updated_at"
-    channels = ("email", "sms")
+    channels = ("email", "sms", "mobile_push")
 
     @property
     def state_partitioning_keys(self) -> Optional[List[str]]:

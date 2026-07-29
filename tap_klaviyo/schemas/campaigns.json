@@ -260,26 +260,44 @@
         "object",
         "null"
       ],
+      "description": "Send strategy. Shape varies by method.",
       "properties": {
         "method": {
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "description": "static, throttled, smart_send_time, immediate, ab_test or unsupported"
         },
-        "options_static": {
+        "datetime": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "Scheduled send time. static and throttled only."
+        },
+        "date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "smart_send_time only"
+        },
+        "throttle_percentage": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "throttled only"
+        },
+        "options": {
           "type": [
             "object",
             "null"
           ],
+          "description": "static only",
           "properties": {
-            "datetime": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "format": "date-time"
-            },
             "is_local": {
               "type": [
                 "boolean",
@@ -289,41 +307,6 @@
             "send_past_recipients_immediately": {
               "type": [
                 "boolean",
-                "null"
-              ]
-            }
-          }
-        },
-        "options_throttled": {
-          "type": [
-            "object",
-            "null"
-          ],
-          "properties": {
-            "datetime": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "format": "date-time"
-            },
-            "throttle_percentage": {
-              "type": [
-                "number",
-                "null"
-              ]
-            }
-          }
-        },
-        "options_sto": {
-          "type": [
-            "object",
-            "null"
-          ],
-          "properties": {
-            "date": {
-              "type": [
-                "string",
                 "null"
               ]
             }
