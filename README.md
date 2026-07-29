@@ -68,8 +68,9 @@ This tap:
 The tap requests revision `2026-07-15` (set in `KlaviyoStream.http_headers`). Klaviyo
 changed the shape of several objects between `2024-10-15` and this revision. The tap doesn't reshape the data — it passes it through as-is. That means the fields below have moved or changed type, so anything consuming them downstream needs to catch up.
 
-Four streams are affected. `events`, `metrics`, `lists`, `list_members`, `templates` and
-all report streams are unchanged.
+Four streams change shape: `campaign_messages`, `campaigns`, `contacts` and `reviews`.
+`events` keeps its shape but can return more rows, described at the end. `metrics`, `lists`,
+`list_members`, `templates` and all report streams are unaffected.
 
 ### campaign_messages
 
@@ -207,6 +208,31 @@ After:
 
 The object also carries `rejection_reason` when a review has been rejected. `email` is now
 nullable. Verified against a live account: all 110 reviews changed shape.
+
+### events (no schema change, but more rows)
+
+The record shape is identical, so nothing downstream breaks. What changed is which events
+come back. From this revision `GET /events` also returns events whose metric cannot be
+resolved, because the metric was deleted or soft-deleted. Earlier revisions dropped those
+silently.
+
+Those records arrive with a null metric relationship:
+
+    "relationships": {"metric": {"data": null, "links": {...}}, "profile": {...}}
+
+The schema already allows this (`relationships.metric`, `.data` and `.data.id` are all
+nullable) and nothing in the tap dereferences the metric per record, so they sync without
+error. The practical effect is that the `events` stream can emit rows it would previously
+have skipped, and a full re-sync will not necessarily match a historical load row for row.
+
+Klaviyo added a `has(metric)` filter to exclude them. The tap deliberately does not apply
+it: extra rows are preferable to silently dropping data, and this only affects accounts
+with deleted metrics. To restore the old behaviour, add `has(metric)` to the filter in
+`EventsStream.get_url_params`. Note Klaviyo only accepts a flat `and(...)`, so it has to be
+folded into the existing datetime filter rather than nested.
+
+The per-metric `events_<metric>` streams filter on `equals(metric_id,...)` and are
+unaffected.
 
 ## Report Streams
 
