@@ -387,6 +387,8 @@ class KlaviyoStream(RESTStream):
 
     @cached_property
     def schema(self) -> dict:
+        if self._tap.input_catalog and self._tap.input_catalog.get(self.name):
+            return self._tap.input_catalog.get(self.name).schema.to_dict()
         return self.get_schema()
     
     def request_decorator(self, func: Callable) -> Callable:
