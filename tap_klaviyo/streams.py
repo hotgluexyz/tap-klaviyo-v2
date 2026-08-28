@@ -244,6 +244,15 @@ class FlowsStream(KlaviyoStream):
     primary_keys = ["id"]
     replication_key = "updated"
 
+    def get_url_params(
+        self, context: Optional[dict], next_page_token: Optional[Any]
+    ) -> Dict[str, Any]:
+        """Return URL params; Klaviyo requires sort to match any date filter field."""
+        params = super().get_url_params(context, next_page_token)
+        if params.get("filter") and self.replication_key:
+            params["sort"] = self.replication_key
+        return params
+
     def get_child_context(self, record, context):
         return {"id": record["id"]}
 
