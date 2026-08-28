@@ -236,10 +236,100 @@ class CampaignMessagesStream(KlaviyoStream):
         return row
 
 
+class FlowsStream(KlaviyoStream):
+    """Klaviyo flows stream."""
+
+    name = "flows"
+    path = "/flows"
+    primary_keys = ["id"]
+    replication_key = "updated"
+
+    def get_child_context(self, record, context):
+        return {"id": record["id"]}
+
+
+class FlowActionsStream(KlaviyoStream):
+    """Flow actions for each flow (child of flows)."""
+
+    name = "flow_actions"
+    path = "/flows/{id}/flow-actions"
+    primary_keys = ["id"]
+    replication_key = None
+    parent_stream_type = FlowsStream
+
+    def get_url_params(
+        self, context: Optional[dict], next_page_token: Optional[Any]
+    ) -> Dict[str, Any]:
+        """Return URL params; nested endpoint syncs fully per parent flow."""
+        params: dict = {}
+        if next_page_token:
+            params["page[cursor]"] = next_page_token
+        return params
+
+    def get_child_context(self, record, context):
+        # SDK reuses the previous child_context across parent records, so after the
+        # first action `context["id"]` may be an action id. Prefer preserved flow_id.
+        flow_id = (context or {}).get("flow_id") or (context or {}).get("id")
+        return {"id": record["id"], "flow_id": flow_id}
+
+    def get_schema(self) -> dict:
+        schema = super().get_schema()
+        schema.setdefault("properties", {})
+        schema["properties"].update(th.Property("flow_id", th.StringType).to_dict())
+        return schema
+
+    def post_process(self, row, context):
+        row = super().post_process(row, context)
+        if context:
+            flow_id = context.get("flow_id") or context.get("id")
+            if flow_id:
+                row["flow_id"] = flow_id
+        return row
+
+
+class FlowMessagesStream(KlaviyoStream):
+    """Flow messages for each flow action (child of flow_actions)."""
+
+    name = "flow_messages"
+    path = "/flow-actions/{id}/flow-messages"
+    primary_keys = ["id"]
+    replication_key = None
+    parent_stream_type = FlowActionsStream
+
+    def get_url_params(
+        self, context: Optional[dict], next_page_token: Optional[Any]
+    ) -> Dict[str, Any]:
+        """Return URL params; nested endpoint syncs fully per parent action."""
+        params: dict = {}
+        if next_page_token:
+            params["page[cursor]"] = next_page_token
+        return params
+
+    def get_schema(self) -> dict:
+        schema = super().get_schema()
+        schema.setdefault("properties", {})
+        schema["properties"].update(th.Property("flow_action_id", th.StringType).to_dict())
+        schema["properties"].update(th.Property("flow_id", th.StringType).to_dict())
+        schema["properties"].update(th.Property("template_id", th.StringType).to_dict())
+        return schema
+
+    def post_process(self, row, context):
+        row = super().post_process(row, context)
+        if context:
+            if context.get("id"):
+                row["flow_action_id"] = context["id"]
+            if context.get("flow_id"):
+                row["flow_id"] = context["flow_id"]
+        template = (row.get("relationships") or {}).get("template", {}).get("data")
+        if template and template.get("id"):
+            row["template_id"] = template["id"]
+        return row
+
+
 class TemplatesStream(KlaviyoStream):
     """Standalone incremental stream for Klaviyo templates.
 
-    Join to campaigns via campaign_messages.template_id -> templates.id.
+    Join via campaign_messages.template_id / flow_messages.template_id -> templates.id.
     """
 
     name = "templates"

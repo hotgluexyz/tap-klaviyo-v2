@@ -213,6 +213,44 @@ class KlaviyoStream(RESTStream):
         property_list['properties'] = new_properties
         return property_list
 
+    def _discovery_ancestor_chain(self) -> list:
+        """Return parent stream classes from root ancestor to immediate parent."""
+        ancestors = []
+        current = self.parent_stream_type
+        while current is not None:
+            ancestors.append(current)
+            current = getattr(current, "parent_stream_type", None)
+        ancestors.reverse()
+        return ancestors
+
+    def _fetch_discovery_records(self, request_type: str, headers: dict) -> list:
+        """Fetch sample records for schema discovery, walking nested parents if needed."""
+        if not self.parent_stream_type:
+            url = self.url_base + self.path
+            return self.request_decorator(self.get_data)(request_type, url, headers)
+
+        sample_id = None
+        for ancestor_cls in self._discovery_ancestor_chain():
+            ancestor = ancestor_cls(tap=self._tap)
+            path = ancestor.path
+            if "{id}" in path:
+                if sample_id is None:
+                    return []
+                url = self.url_base + path.replace("{id}", sample_id)
+            else:
+                url = self.url_base + path
+            # Use ancestor.get_data so parents with required filters (e.g. campaigns)
+            # still discover correctly.
+            records = self.request_decorator(ancestor.get_data)(
+                request_type, url, headers
+            )
+            if not records:
+                return []
+            sample_id = records[0]["id"]
+
+        url = self.url_base + self.path.replace("{id}", sample_id)
+        return self.request_decorator(self.get_data)(request_type, url, headers)
+
     def get_schema(self) -> dict:
         """Dynamically detect the json schema for the stream.
         This is evaluated prior to any records being retrieved.
@@ -227,27 +265,9 @@ class KlaviyoStream(RESTStream):
         # Get the data
         headers = self.http_headers
         headers.update(self.authenticator.auth_headers)
-        path = self.path
 
         request_type = self.rest_method
-        url = self.url_base + path
-
-        # discover for child streams
-        if self.parent_stream_type:
-            parent_url = self.url_base + self.parent_stream_type.path
-            parent_records = self.request_decorator(self.get_data)(
-                request_type, parent_url, headers
-            )
-            parent_id = parent_records[0]["id"] if parent_records else None
-            if parent_id:
-                url = url.replace("{id}", parent_id)
-                records = self.request_decorator(self.get_data)(
-                    request_type, url, headers
-                )
-            else:
-                records = []
-        else:
-            records = self.request_decorator(self.get_data)(request_type, url, headers)
+        records = self._fetch_discovery_records(request_type, headers)
 
         if len(records) > 0:
             flattened_records = [self._flatten_discovery_record(record) for record in records]
