@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from typing import Any, Dict, Optional, Callable
+import re
 
 import requests
 from backports.cached_property import cached_property
@@ -223,6 +224,13 @@ class KlaviyoStream(RESTStream):
         ancestors.reverse()
         return ancestors
 
+    def _path_has_placeholder(self, path: str) -> bool:
+        return "{" in path and "}" in path
+
+    def _fill_path_placeholder(self, path: str, sample_id: str) -> str:
+        """Replace the first {param} in a nested path with a discovered parent id."""
+        return re.sub(r"\{[^}]+\}", sample_id, path, count=1)
+
     def _fetch_discovery_records(self, request_type: str, headers: dict) -> list:
         """Fetch sample records for schema discovery, walking nested parents if needed."""
         if not self.parent_stream_type:
@@ -233,10 +241,10 @@ class KlaviyoStream(RESTStream):
         for ancestor_cls in self._discovery_ancestor_chain():
             ancestor = ancestor_cls(tap=self._tap)
             path = ancestor.path
-            if "{id}" in path:
+            if self._path_has_placeholder(path):
                 if sample_id is None:
                     return []
-                url = self.url_base + path.replace("{id}", sample_id)
+                url = self.url_base + self._fill_path_placeholder(path, sample_id)
             else:
                 url = self.url_base + path
             # Use ancestor.get_data so parents with required filters (e.g. campaigns)
@@ -248,7 +256,7 @@ class KlaviyoStream(RESTStream):
                 return []
             sample_id = records[0]["id"]
 
-        url = self.url_base + self.path.replace("{id}", sample_id)
+        url = self.url_base + self._fill_path_placeholder(self.path, sample_id)
         return self.request_decorator(self.get_data)(request_type, url, headers)
 
     def get_schema(self) -> dict:

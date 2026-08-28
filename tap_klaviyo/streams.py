@@ -254,32 +254,37 @@ class FlowsStream(KlaviyoStream):
         return params
 
     def get_child_context(self, record, context):
-        return {"id": record["id"]}
+        return {"flow_id": record["id"]}
 
 
-class FlowActionsStream(KlaviyoStream):
-    """Flow actions for each flow (child of flows)."""
+class KlaviyoNestedFlowStream(KlaviyoStream):
+    """Nested flow child stream: full sync per parent, cursor pagination only."""
 
-    name = "flow_actions"
-    path = "/flows/{id}/flow-actions"
-    primary_keys = ["id"]
     replication_key = None
-    parent_stream_type = FlowsStream
 
     def get_url_params(
         self, context: Optional[dict], next_page_token: Optional[Any]
     ) -> Dict[str, Any]:
-        """Return URL params; nested endpoint syncs fully per parent flow."""
+        """Return URL params; nested endpoint syncs fully per parent."""
         params: dict = {}
         if next_page_token:
             params["page[cursor]"] = next_page_token
         return params
 
+
+class FlowActionsStream(KlaviyoNestedFlowStream):
+    """Flow actions for each flow (child of flows)."""
+
+    name = "flow_actions"
+    path = "/flows/{flow_id}/flow-actions"
+    primary_keys = ["id"]
+    parent_stream_type = FlowsStream
+
     def get_child_context(self, record, context):
-        # SDK reuses the previous child_context across parent records, so after the
-        # first action `context["id"]` may be an action id. Prefer preserved flow_id.
-        flow_id = (context or {}).get("flow_id") or (context or {}).get("id")
-        return {"id": record["id"], "flow_id": flow_id}
+        return {
+            "flow_action_id": record["id"],
+            "flow_id": (context or {}).get("flow_id"),
+        }
 
     def get_schema(self) -> dict:
         schema = super().get_schema()
@@ -287,32 +292,14 @@ class FlowActionsStream(KlaviyoStream):
         schema["properties"].update(th.Property("flow_id", th.StringType).to_dict())
         return schema
 
-    def post_process(self, row, context):
-        row = super().post_process(row, context)
-        if context:
-            flow_id = context.get("flow_id") or context.get("id")
-            if flow_id:
-                row["flow_id"] = flow_id
-        return row
 
-
-class FlowMessagesStream(KlaviyoStream):
+class FlowMessagesStream(KlaviyoNestedFlowStream):
     """Flow messages for each flow action (child of flow_actions)."""
 
     name = "flow_messages"
-    path = "/flow-actions/{id}/flow-messages"
+    path = "/flow-actions/{flow_action_id}/flow-messages"
     primary_keys = ["id"]
-    replication_key = None
     parent_stream_type = FlowActionsStream
-
-    def get_url_params(
-        self, context: Optional[dict], next_page_token: Optional[Any]
-    ) -> Dict[str, Any]:
-        """Return URL params; nested endpoint syncs fully per parent action."""
-        params: dict = {}
-        if next_page_token:
-            params["page[cursor]"] = next_page_token
-        return params
 
     def get_schema(self) -> dict:
         schema = super().get_schema()
@@ -324,11 +311,6 @@ class FlowMessagesStream(KlaviyoStream):
 
     def post_process(self, row, context):
         row = super().post_process(row, context)
-        if context:
-            if context.get("id"):
-                row["flow_action_id"] = context["id"]
-            if context.get("flow_id"):
-                row["flow_id"] = context["flow_id"]
         template = (row.get("relationships") or {}).get("template", {}).get("data")
         if template and template.get("id"):
             row["template_id"] = template["id"]
