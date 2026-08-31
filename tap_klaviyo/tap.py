@@ -15,6 +15,9 @@ from tap_klaviyo.streams import (
     CampaignsStream,
     ContactsStream,
     EventsStream,
+    FlowActionsStream,
+    FlowMessagesStream,
+    FlowsStream,
     ListMembersStream,
     ListsStream,
     MetricsStream,
@@ -33,6 +36,9 @@ STREAM_TYPES = [
     CampaignsStream,
     CampaignMessagesStream,
     TemplatesStream,
+    FlowsStream,
+    FlowActionsStream,
+    FlowMessagesStream,
 ]
 
 
