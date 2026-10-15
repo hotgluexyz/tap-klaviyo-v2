@@ -384,6 +384,12 @@ class KlaviyoStream(RESTStream):
         """True if response is 401."""
         return self._is_error_response(response, 401)
 
+    def validate_response(self, response: requests.Response) -> None:
+        """Raise a credential error for Klaviyo authentication failures."""
+        if response.status_code in (401, 403):
+            raise InvalidCredentialsError(self.response_error_message(response))
+        super().validate_response(response)
+
     def get_data(self, method: str, url: str, headers: dict) -> list:
         response = requests.request(
             method=method,
