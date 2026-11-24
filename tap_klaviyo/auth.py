@@ -63,12 +63,9 @@ class KlaviyoAuthenticator(OAuthAuthenticator, metaclass=SingletonMeta):
             oauth_scopes="",
         )
 
-    def update_access_token_locally(self) -> None:
-        """Use Klaviyo's Basic auth refresh for --access-token."""
-        self.update_access_token()
-
     @backoff.on_exception(backoff.expo, Exception, max_tries=3)
-    def update_access_token(self) -> None:
+    def update_access_token_locally(self) -> None:
+        """Refresh directly with Klaviyo using Basic auth."""
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
         token_response = requests.post(
             self._auth_endpoint,
