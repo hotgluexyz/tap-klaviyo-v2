@@ -63,11 +63,12 @@ class KlaviyoAuthenticator(OAuthAuthenticator, metaclass=SingletonMeta):
             oauth_scopes="",
         )
 
+    def update_access_token_locally(self) -> None:
+        """Use Klaviyo's Basic auth refresh for --access-token."""
+        self.update_access_token()
+
     @backoff.on_exception(backoff.expo, Exception, max_tries=3)
     def update_access_token(self) -> None:
-        self.logger.info(
-            f"Oauth request - endpoint: {self._auth_endpoint}, body: {self.oauth_request_body}"
-        )
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
         token_response = requests.post(
             self._auth_endpoint,
@@ -86,11 +87,10 @@ class KlaviyoAuthenticator(OAuthAuthenticator, metaclass=SingletonMeta):
                 f"Failed OAuth login, response was '{token_response.text}'. {ex}"
             ) from ex
         token_json = token_response.json()
-        # Log the refresh_token
-        self.logger.info(f"Latest refresh token: {token_json['refresh_token']}")
         self.access_token = token_json["access_token"]
         self._tap._config["access_token"] = token_json["access_token"]
-        self._tap._config["refresh_token"] = token_json["refresh_token"]
+        if token_json.get("refresh_token"):
+            self._tap._config["refresh_token"] = token_json["refresh_token"]
         now = round(datetime.utcnow().timestamp())
         self._tap._config["expires_in"] = now + token_json["expires_in"]
 
